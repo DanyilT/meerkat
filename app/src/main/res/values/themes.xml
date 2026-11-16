@@ -1,0 +1,4 @@
+<resources>
+    <!-- Window theme only. All styling is done in Compose (core/design). -->
+    <style name="Theme.Meerkat" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

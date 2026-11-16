@@ -1,0 +1,4 @@
+<resources>
+    <!-- Dark window background so a dark system theme does not flash white on launch. -->
+    <style name="Theme.Meerkat" parent="android:Theme.Material.NoActionBar" />
+</resources>
