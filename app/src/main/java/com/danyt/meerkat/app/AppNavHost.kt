@@ -1,5 +1,9 @@
 package com.danyt.meerkat.app
 
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import com.danyt.meerkat.feature.hotspot.HotspotViewModel
+import com.danyt.meerkat.feature.hotspot.HotspotScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterTransition
@@ -39,8 +43,20 @@ import com.danyt.meerkat.feature.home.FeaturesViewModel
 import com.danyt.meerkat.feature.home.HomeItem
 import com.danyt.meerkat.feature.home.HomeScreen
 import com.danyt.meerkat.feature.home.HomeViewModel
+import com.danyt.meerkat.feature.lan.DeviceScreen
+import com.danyt.meerkat.feature.lan.DeviceViewModel
+import com.danyt.meerkat.feature.lan.LanScreen
+import com.danyt.meerkat.feature.lan.LanViewModel
+import com.danyt.meerkat.feature.ports.PortsScreen
+import com.danyt.meerkat.feature.ports.PortsViewModel
+import com.danyt.meerkat.feature.reports.ReportScreen
+import com.danyt.meerkat.feature.reports.ReportViewModel
+import com.danyt.meerkat.feature.reports.ReportsScreen
+import com.danyt.meerkat.feature.reports.ReportsViewModel
 import com.danyt.meerkat.feature.settings.CreditsScreen
 import com.danyt.meerkat.feature.settings.LicenseScreen
+import com.danyt.meerkat.feature.settings.ScopeScreen
+import com.danyt.meerkat.feature.settings.ScopeViewModel
 import com.danyt.meerkat.feature.settings.SettingsScreen
 import com.danyt.meerkat.feature.settings.SettingsViewModel
 
@@ -58,6 +74,12 @@ fun AppNavHost(
 ) {
     val animate = AppTheme.animationsEnabled
     val open: (String) -> Unit = { route -> navController.navigate(route) { launchSingleTop = true } }
+    // Opening a tool from the dashboard or the list takes away its "New" badge.
+    val scope = rememberCoroutineScope()
+    val openTool: (String) -> Unit = { route ->
+        scope.launch { container.settingsRepository.markToolOpened(route) }
+        open(route)
+    }
     val back: () -> Unit = { if (navController.previousBackStackEntry != null) navController.popBackStack() }
     val slide = tween<IntOffset>(SLIDE_MILLIS)
     val gestureSlide = tween<IntOffset>(GESTURE_FINISH_MILLIS, easing = LinearEasing)
@@ -111,21 +133,120 @@ fun AppNavHost(
             )
             HomeScreen(
                 viewModel = viewModel,
-                onOpenFeature = open,
+                intros = container.intros,
+                onOpenFeature = openTool,
                 onOpenAllFeatures = { open(Routes.FEATURES) },
                 onOpenSettings = { open(Routes.SETTINGS) },
             )
         }
         screen(Routes.FEATURES) {
             val viewModel: FeaturesViewModel = viewModel(
-                factory = viewModelFactory { initializer { FeaturesViewModel(homeItems) } },
+                factory = viewModelFactory {
+                    initializer { FeaturesViewModel(homeItems, container.settingsRepository) }
+                },
             )
             FeaturesScreen(
                 viewModel = viewModel,
-                onOpenFeature = open,
+                onOpenFeature = openTool,
                 onOpenDashboard = back,
                 onOpenSettings = { open(Routes.SETTINGS) },
             )
+        }
+
+        // The target is optional: the dashboard opens the scanner as it was, the hotspot tool fills one in.
+        screen("${Routes.LAN}?${Routes.ARG_TARGET}={${Routes.ARG_TARGET}}") { entry ->
+            val target = entry.arguments?.getString(Routes.ARG_TARGET)
+            val viewModel: LanViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        LanViewModel(
+                            session = container.lanScanSession,
+                            localNetwork = container.localNetwork,
+                            settingsRepository = container.settingsRepository,
+                            reportStore = container.reportStore,
+                            initialTarget = target,
+                        )
+                    }
+                },
+            )
+            LanScreen(
+                viewModel = viewModel,
+                intros = container.intros,
+                onBack = back,
+                onOpenDevice = { open(Routes.device(it)) },
+                onOpenScope = { open(Routes.SCOPE) },
+                onOpenReport = { open(Routes.report(it)) },
+            )
+        }
+        screen(Routes.DEVICE) { entry ->
+            val address = entry.arguments?.getString(Routes.ARG_ADDRESS).orEmpty()
+            val viewModel: DeviceViewModel = viewModel(
+                factory = viewModelFactory { 
+                    initializer { DeviceViewModel(container.lanScanSession, container.localNetwork, address) }
+                 },
+            )
+            DeviceScreen(
+                viewModel = viewModel,
+                onBack = back,
+                onPortScan = { open(Routes.ports(it)) },
+                onOpenSsh = { open(Routes.SSH) },
+            )
+        }
+        // The host is optional: the dashboard opens the scanner empty, a device opens it with its address.
+        screen("${Routes.PORTS}?${Routes.ARG_HOST}={${Routes.ARG_HOST}}") { entry ->
+            val host = entry.arguments?.getString(Routes.ARG_HOST)
+            val viewModel: PortsViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        PortsViewModel(
+                            session = container.portScanSession,
+                            localNetwork = container.localNetwork,
+                            settingsRepository = container.settingsRepository,
+                            reportStore = container.reportStore,
+                            initialHost = host,
+                        )
+                    }
+                },
+            )
+            PortsScreen(
+                viewModel = viewModel,
+                intros = container.intros,
+                onBack = back,
+                onOpenScope = { open(Routes.SCOPE) },
+                onOpenReport = { open(Routes.report(it)) },
+            )
+        }
+
+        screen(Routes.HOTSPOT) {
+            val viewModel: HotspotViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { HotspotViewModel(container.localHotspot, container.localNetwork) }
+                },
+            )
+            HotspotScreen(
+                viewModel = viewModel,
+                intros = container.intros,
+                onBack = back,
+                onScan = { open(Routes.lan(it)) },
+            )
+        }
+        screen(Routes.REPORTS) {
+            val viewModel: ReportsViewModel = viewModel(
+                factory = viewModelFactory { initializer { ReportsViewModel(container.reportStore) } },
+            )
+            ReportsScreen(
+                viewModel = viewModel,
+                intros = container.intros,
+                onBack = back,
+                onOpenReport = { open(Routes.report(it)) },
+            )
+        }
+        screen(Routes.REPORT) { entry ->
+            val id = entry.arguments?.getString(Routes.ARG_ID).orEmpty()
+            val viewModel: ReportViewModel = viewModel(
+                factory = viewModelFactory { initializer { ReportViewModel(container.reportStore, id) } },
+            )
+            ReportScreen(viewModel = viewModel, onBack = back)
         }
 
         Features.filterNot { it.built }.forEach { feature ->
@@ -141,7 +262,9 @@ fun AppNavHost(
         screen(Routes.SETTINGS) {
             val viewModel: SettingsViewModel = viewModel(
                 factory = viewModelFactory {
-                    initializer { SettingsViewModel(container.settingsRepository, container.cacheManager) }
+                    initializer {
+                        SettingsViewModel(container.settingsRepository, container.cacheManager, container.reportStore)
+                    }
                 },
             )
             SettingsScreen(
@@ -149,7 +272,16 @@ fun AppNavHost(
                 onBack = back,
                 onOpenCredits = { open(Routes.CREDITS) },
                 onOpenLicense = { open(Routes.LICENSE) },
+                onOpenScope = { open(Routes.SCOPE) },
             )
+        }
+        screen(Routes.SCOPE) {
+            val viewModel: ScopeViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { ScopeViewModel(container.settingsRepository, container.localNetwork) }
+                },
+            )
+            ScopeScreen(viewModel = viewModel, onBack = back)
         }
         screen(Routes.CREDITS) { CreditsScreen(onBack = back) }
         screen(Routes.LICENSE) { LicenseScreen(onBack = back) }
@@ -163,8 +295,8 @@ fun AppNavHost(
  * the finger moves, and it is fully sharp once the screen above has gone. Opening a screen does not blur it.
  * Blur needs Android 12 or newer; on older versions the previous screen is simply shown as it is.
  */
-private fun NavGraphBuilder.screen(route: String, content: @Composable () -> Unit) {
-    composable(route) {
+private fun NavGraphBuilder.screen(route: String, content: @Composable (NavBackStackEntry) -> Unit) {
+    composable(route) { entry ->
         // False on the first visit, when the screen is being opened. True on every later appearance, which
         // can only be a return to it. Saved with the back stack entry, so it survives being covered.
         var visited by rememberSaveable { mutableStateOf(false) }
@@ -178,7 +310,7 @@ private fun NavGraphBuilder.screen(route: String, content: @Composable () -> Uni
         ) { state ->
             if (enabled && state == EnterExitState.PreEnter) RevealBlur else 0.dp
         }
-        Box(Modifier.fillMaxSize().blur(blur)) { content() }
+        Box(Modifier.fillMaxSize().blur(blur)) { content(entry) }
     }
 }
 

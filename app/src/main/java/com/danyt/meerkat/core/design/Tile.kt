@@ -37,6 +37,7 @@ private val CompactTileWidth = 160.dp
  *
  * @param onClick makes the tile tappable when not null.
  * @param badge optional small label in the top right corner, for example "Soon".
+ * @param badgeEmphasized fills the badge with the accent color, for something that wants attention, like "New".
  * @param action optional slot in the top right corner, shown instead of [badge], for example a remove button.
  */
 @Composable
@@ -47,6 +48,7 @@ fun Tile(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     badge: String? = null,
+    badgeEmphasized: Boolean = false,
     action: (@Composable () -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
@@ -73,7 +75,7 @@ fun Tile(
             if (action != null) {
                 Box(Modifier.align(Alignment.TopEnd)) { action() }
             } else if (badge != null) {
-                Badge(badge, Modifier.align(Alignment.TopEnd))
+                Badge(badge, Modifier.align(Alignment.TopEnd), emphasized = badgeEmphasized)
             }
             Column(Modifier.align(Alignment.BottomStart)) {
                 Text(
@@ -108,6 +110,14 @@ private fun TilePreview() {
         ) {
             Tile("LAN Scanner", AppIcons.Lan, onClick = {}, modifier = Modifier.weight(1f), subtitle = "Find devices.")
             Tile("SSH", AppIcons.Terminal, onClick = {}, modifier = Modifier.weight(1f), badge = "Soon")
+            Tile(
+                title = "Hotspot",
+                icon = AppIcons.Hotspot,
+                onClick = {},
+                modifier = Modifier.weight(1f),
+                badge = "New",
+                badgeEmphasized = true,
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.danyt.meerkat.core.design
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -39,7 +40,9 @@ import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp as lerpFloat
@@ -98,12 +101,15 @@ fun GroupedSection(
  * A row inside a [GroupedSection].
  *
  * @param title main text.
+ * @param titleNote optional short remark after the title on the same line, smaller and in the secondary color.
  * @param subtitle optional second line.
  * @param icon optional leading icon, shown on a round accent-colored tile.
  * @param value optional trailing text in the secondary color, for example the current choice.
  * @param chevron show a trailing chevron to signal navigation.
  * @param titleColor overrides the title color, for example the accent for an action or red for a destructive one.
  * @param onClick makes the whole row tappable when not null.
+ * @param onLongClick called on a long press, for example to copy the value.
+ * @param titleAccessory optional small content right after the title, such as a help button.
  * @param trailing optional slot placed after [value] and before the chevron.
  */
 @Composable
@@ -118,12 +124,21 @@ fun GroupedRow(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    titleNote: String? = null,
+    onLongClick: (() -> Unit)? = null,
+    titleAccessory: (@Composable () -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
-    val click = if (onClick != null) {
-        Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-    } else {
-        Modifier
+    val noteStyle = AppTheme.typography.subhead.toSpanStyle().copy(color = colors.secondaryLabel)
+    val click = when {
+        onLongClick != null -> Modifier.combinedClickable(
+            enabled = enabled,
+            role = if (onClick != null) Role.Button else null,
+            onLongClick = onLongClick,
+            onClick = onClick ?: {},
+        )
+        onClick != null -> Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        else -> Modifier
     }
     Row(
         modifier = modifier
@@ -141,13 +156,20 @@ fun GroupedRow(
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = AppTheme.typography.body,
-                color = titleColor.takeOrElse { colors.label },
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = buildAnnotatedString {
+                        append(title)
+                        if (titleNote != null) withStyle(noteStyle) { append("  $titleNote") }
+                    },
+                    style = AppTheme.typography.body,
+                    color = titleColor.takeOrElse { colors.label },
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                titleAccessory?.invoke()
+            }
             if (subtitle != null) {
                 Text(subtitle, style = AppTheme.typography.subhead, color = colors.secondaryLabel)
             }
@@ -182,6 +204,7 @@ fun GroupedSwitchRow(
     subtitle: String? = null,
     icon: ImageVector? = null,
     enabled: Boolean = true,
+    titleAccessory: (@Composable () -> Unit)? = null,
 ) {
     GroupedRow(
         title = title,
@@ -189,6 +212,7 @@ fun GroupedSwitchRow(
         subtitle = subtitle,
         icon = icon,
         enabled = enabled,
+        titleAccessory = titleAccessory,
         trailing = { AppSwitch(checked = checked, onCheckedChange = null, enabled = enabled) },
     )
 }

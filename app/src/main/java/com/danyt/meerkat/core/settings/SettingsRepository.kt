@@ -1,5 +1,6 @@
 package com.danyt.meerkat.core.settings
 
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -57,6 +58,73 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[Keys.dashboardTiles] = routes.distinct().joinToString(ROUTE_SEPARATOR) }
     }
 
+    /** Persists the scope guard list. Blank entries and repeats are dropped; the order is kept. */
+    suspend fun setAuthorizedRanges(ranges: List<String>) {
+        val clean = ranges.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        dataStore.edit { it[Keys.authorizedRanges] = clean.joinToString(RANGE_SEPARATOR) }
+    }
+
+    /** Persists whether the MAC address privacy tip should stay hidden. */
+    suspend fun setMacTipDismissed(dismissed: Boolean) {
+        dataStore.edit { it[Keys.macTipDismissed] = dismissed }
+    }
+
+    /** Persists the network scanner's Custom profile, in a single write. */
+    suspend fun setCustomScan(options: SavedScanOptions) {
+        dataStore.edit {
+            it[Keys.scanPing] = options.ping
+            it[Keys.scanTcpPorts] = options.tcpPorts
+            it[Keys.scanUdpPorts] = options.udpPorts
+            it[Keys.scanTimeout] = options.timeout
+            it[Keys.scanConcurrency] = options.concurrency
+            it[Keys.scanResolveNames] = options.resolveNames
+            it[Keys.scanDnsServer] = options.dnsServer
+        }
+    }
+
+    /**
+     * Adds tools that became available since the last start to the dashboard and marks them "New". Runs as one
+     * write, so the layout and the badges never disagree. See [reconcileNewTools].
+     *
+     * @param built routes of the tools that work in this version, in catalog order.
+     */
+    suspend fun reconcileTools(built: List<String>) {
+        dataStore.edit { preferences ->
+            val update = reconcileNewTools(
+                built = built,
+                layout = preferences[Keys.dashboardTiles]?.split(ROUTE_SEPARATOR)?.filter { it.isNotEmpty() },
+                known = preferences[Keys.knownTools],
+                fresh = preferences[Keys.newTools].orEmpty(),
+            ) ?: return@edit
+            update.layout?.let { preferences[Keys.dashboardTiles] = it.joinToString(ROUTE_SEPARATOR) }
+            preferences[Keys.knownTools] = update.known
+            preferences[Keys.newTools] = update.fresh
+        }
+    }
+
+    /** Removes the "New" badge from a tool, once the user has opened it. */
+    suspend fun markToolOpened(route: String) {
+        dataStore.edit { preferences ->
+            val fresh = preferences[Keys.newTools].orEmpty()
+            if (route in fresh) preferences[Keys.newTools] = fresh - route
+        }
+    }
+
+    /** Persists whether screens introduce themselves and show an info button. */
+    suspend fun setIntrosEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.introsEnabled] = enabled }
+    }
+
+    /** Remembers that the introduction with [key] was acknowledged. */
+    suspend fun markIntroSeen(key: String) {
+        dataStore.edit { it[Keys.seenIntros] = it[Keys.seenIntros].orEmpty() + key }
+    }
+
+    /** Forgets which introductions were acknowledged, so every screen introduces itself once more. */
+    suspend fun resetIntros() {
+        dataStore.edit { it.remove(Keys.seenIntros) }
+    }
+
     private fun toSettings(preferences: Preferences): AppSettings {
         val defaults = AppSettings()
         return AppSettings(
@@ -66,6 +134,21 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             animationsEnabled = preferences[Keys.animationsEnabled] ?: defaults.animationsEnabled,
             blurEnabled = preferences[Keys.blurEnabled] ?: defaults.blurEnabled,
             dashboardTiles = preferences[Keys.dashboardTiles]?.split(ROUTE_SEPARATOR)?.filter { it.isNotEmpty() },
+            authorizedRanges = preferences[Keys.authorizedRanges]?.split(RANGE_SEPARATOR)?.filter { it.isNotEmpty() }
+                ?: defaults.authorizedRanges,
+            macTipDismissed = preferences[Keys.macTipDismissed] ?: defaults.macTipDismissed,
+            customScan = SavedScanOptions(
+                ping = preferences[Keys.scanPing] ?: defaults.customScan.ping,
+                tcpPorts = preferences[Keys.scanTcpPorts] ?: defaults.customScan.tcpPorts,
+                udpPorts = preferences[Keys.scanUdpPorts] ?: defaults.customScan.udpPorts,
+                timeout = preferences[Keys.scanTimeout] ?: defaults.customScan.timeout,
+                concurrency = preferences[Keys.scanConcurrency] ?: defaults.customScan.concurrency,
+                resolveNames = preferences[Keys.scanResolveNames] ?: defaults.customScan.resolveNames,
+                dnsServer = preferences[Keys.scanDnsServer] ?: defaults.customScan.dnsServer,
+            ),
+            introsEnabled = preferences[Keys.introsEnabled] ?: defaults.introsEnabled,
+            seenIntros = preferences[Keys.seenIntros] ?: defaults.seenIntros,
+            newTools = preferences[Keys.newTools] ?: defaults.newTools,
         )
     }
 
@@ -76,10 +159,24 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val animationsEnabled = booleanPreferencesKey("animations_enabled")
         val blurEnabled = booleanPreferencesKey("blur_enabled")
         val dashboardTiles = stringPreferencesKey("dashboard_layout")
+        val authorizedRanges = stringPreferencesKey("authorized_ranges")
+        val macTipDismissed = booleanPreferencesKey("mac_tip_dismissed")
+        val scanPing = booleanPreferencesKey("scan_ping")
+        val scanTcpPorts = stringPreferencesKey("scan_tcp_ports")
+        val scanUdpPorts = stringPreferencesKey("scan_udp_ports")
+        val scanTimeout = stringPreferencesKey("scan_timeout")
+        val scanConcurrency = stringPreferencesKey("scan_concurrency")
+        val scanResolveNames = booleanPreferencesKey("scan_resolve_names")
+        val scanDnsServer = stringPreferencesKey("scan_dns_server")
+        val introsEnabled = booleanPreferencesKey("intros_enabled")
+        val seenIntros = stringSetPreferencesKey("seen_intros")
+        val knownTools = stringSetPreferencesKey("known_tools")
+        val newTools = stringSetPreferencesKey("new_tools")
     }
 
     private companion object {
         const val OPAQUE_ALPHA = 0xFF000000.toInt()
         const val ROUTE_SEPARATOR = ","
+        const val RANGE_SEPARATOR = "\n"
     }
 }

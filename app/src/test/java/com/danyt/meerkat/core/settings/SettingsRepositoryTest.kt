@@ -97,4 +97,34 @@ class SettingsRepositoryTest {
         repository.setDashboardTiles(emptyList())
         assertEquals(emptyList<String>(), repository.settings.first().dashboardTiles)
     }
+
+    @Test
+    fun `authorized ranges are cleaned and keep their order`() = withStore(newFile()) { store ->
+        val repository = SettingsRepository(store)
+        assertEquals(emptyList<String>(), repository.settings.first().authorizedRanges)
+
+        repository.setAuthorizedRanges(listOf(" 10.0.0.0/8 ", "", "192.168.1.1-50", "10.0.0.0/8"))
+        assertEquals(listOf("10.0.0.0/8", "192.168.1.1-50"), repository.settings.first().authorizedRanges)
+
+        repository.setAuthorizedRanges(emptyList())
+        assertEquals(emptyList<String>(), repository.settings.first().authorizedRanges)
+    }
+
+    @Test
+    fun `the MAC tip choice and the custom scan profile survive a restart`() {
+        val file = newFile()
+        val custom = SavedScanOptions(ping = false, tcpPorts = "22, 8000-8010", udpPorts = "53", timeout = "abc")
+        withStore(file) { store ->
+            val repository = SettingsRepository(store)
+            assertEquals(false, repository.settings.first().macTipDismissed)
+            assertEquals(SavedScanOptions(), repository.settings.first().customScan)
+            repository.setMacTipDismissed(true)
+            repository.setCustomScan(custom)
+        }
+        withStore(file) { store ->
+            val settings = SettingsRepository(store).settings.first()
+            assertEquals(true, settings.macTipDismissed)
+            assertEquals(custom, settings.customScan)
+        }
+    }
 }

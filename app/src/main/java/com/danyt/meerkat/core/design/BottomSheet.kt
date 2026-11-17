@@ -1,5 +1,7 @@
 package com.danyt.meerkat.core.design
 
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -43,7 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +58,12 @@ import kotlinx.coroutines.launch
 private val SheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
 
 /**
+ * Inside a [BottomSheet], closes that sheet with its closing animation and then reports the dismissal.
+ * Outside a sheet it does nothing.
+ */
+val LocalSheetClose = staticCompositionLocalOf<() -> Unit> { {} }
+
+/**
  * A modal sheet on a glass surface.
  *
  * In portrait it slides up from the bottom and is dismissed by swiping down. In landscape, where a bottom
@@ -63,7 +71,10 @@ private val SheetShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
  * Back and tapping outside dismiss it in both. On Android 12+ it blurs the app content behind it (see
  * [GlassBackdrop]).
  *
- * @param onDismiss called when the sheet is dismissed by swipe, back, or tapping outside.
+ * Content that wants to close the sheet itself, for example after a choice was made, calls
+ * [LocalSheetClose]. That plays the closing animation first, which simply removing the sheet would skip.
+ *
+ * @param onDismiss called when the sheet is dismissed by swipe, back, tapping outside, or [LocalSheetClose].
  * @param title optional centered title at the top of the sheet.
  * @param swipeToDismiss set false when the content handles vertical drags itself, such as a color picker.
  * @param content sheet content, laid out in a column above the navigation bar and keyboard. It scrolls only
@@ -78,15 +89,20 @@ fun BottomSheet(
     swipeToDismiss: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val configuration = LocalConfiguration.current
-    if (configuration.screenWidthDp > configuration.screenHeightDp) {
+    // The size of the app's own window, which is also right in split screen and on foldables.
+    val window = LocalWindowInfo.current.containerSize
+    if (window.width > window.height) {
         SideSheet(onDismiss, title, content)
         return
     }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val currentOnDismiss by rememberUpdatedState(onDismiss)
+    val close: () -> Unit = { scope.launch { sheetState.hide() }.invokeOnCompletion { currentOnDismiss() } }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = sheetState,
         sheetGesturesEnabled = swipeToDismiss,
         shape = SheetShape,
         containerColor = Color.Transparent,
@@ -96,7 +112,9 @@ fun BottomSheet(
         contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
     ) {
         GlassSurface(Modifier.fillMaxWidth(), shape = SheetShape, hazeState = LocalBackdropHazeState.current) {
-            SheetContent(title, swipeToDismiss, content)
+            CompositionLocalProvider(LocalSheetClose provides close) {
+                SheetContent(title, swipeToDismiss, content)
+            }
         }
     }
 }
@@ -197,7 +215,9 @@ private fun SideSheet(onDismiss: () -> Unit, title: String?, content: @Composabl
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp),
                         )
                     }
-                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), content = content)
+                    CompositionLocalProvider(LocalSheetClose provides { scope.launch { close() } }) {
+                        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), content = content)
+                    }
                 }
             }
         }

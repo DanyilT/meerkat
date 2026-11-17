@@ -15,6 +15,10 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -69,6 +73,7 @@ import kotlinx.coroutines.delay
 
 private val BarHeight = 60.dp
 private val CollapseDistance = 24.dp
+private const val HOLD_REVEAL_MILLIS = 180L
 private const val CollapsedTitleScale = 0.72f
 private const val BACK_REVEAL_MILLIS = 190
 private const val TITLE_SWAP_MILLIS = 340
@@ -111,16 +116,38 @@ fun AppScaffold(
     // Tapping the title goes back, and slides a back chevron in from the left, pushing the title aside.
     val animate = AppTheme.animationsEnabled
     var leaving by remember { mutableStateOf(false) }
+    var revealed by remember { mutableStateOf(false) }
     LaunchedEffect(leaving) {
         if (leaving) {
             // The screen is normally gone well before this. If it stayed, hide the chevron again.
             delay(900)
             leaving = false
+            revealed = false
         }
     }
     val backLabel = stringResource(R.string.action_back)
+    // Holding the title shows the chevron too, as a hint of what a tap does.
+    val titlePresses = remember { MutableInteractionSource() }
+    val held by titlePresses.collectIsPressedAsState()
+    // A quick tap just goes back. Only a press held a moment reveals the chevron, which then stays while the
+    // screen leaves if the press ends in a tap.
+    LaunchedEffect(held) {
+        if (held) {
+            delay(HOLD_REVEAL_MILLIS)
+            revealed = true
+        } else if (!leaving) {
+            revealed = false
+        }
+    }
+    val showChevron = onTitleClick != null && animate && revealed
     val titleClick = if (onTitleClick != null) {
-        Modifier.clickable(enabled = !leaving, role = Role.Button, onClickLabel = backLabel) {
+        Modifier.clickable(
+            interactionSource = titlePresses,
+            indication = LocalIndication.current,
+            enabled = !leaving,
+            role = Role.Button,
+            onClickLabel = backLabel,
+        ) {
             // Go back at once. The chevron slides in while the screen is already sliding away.
             leaving = animate
             onTitleClick()
@@ -170,11 +197,17 @@ fun AppScaffold(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AnimatedVisibility(
-                            visible = leaving,
+                            visible = showChevron,
                             enter = expandHorizontally(tween(BACK_REVEAL_MILLIS), expandFrom = Alignment.Start) +
                                 slideInHorizontally(tween(BACK_REVEAL_MILLIS)) { -it } +
                                 fadeIn(tween(BACK_REVEAL_MILLIS)),
-                            exit = ExitTransition.None,
+                            // Let go without tapping (the finger slid away): the chevron folds back in.
+                            exit = if (leaving) {
+                                ExitTransition.None
+                            } else {
+                                shrinkHorizontally(tween(BACK_REVEAL_MILLIS), shrinkTowards = Alignment.Start) +
+                                    fadeOut(tween(BACK_REVEAL_MILLIS))
+                            },
                         ) {
                             Icon(
                                 imageVector = AppIcons.ChevronLeft,

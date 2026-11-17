@@ -1,5 +1,44 @@
 package com.danyt.meerkat.feature.home
 
+import com.danyt.meerkat.core.design.InfoTextWithIcon
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.danyt.meerkat.core.settings.ThemeMode
+import com.danyt.meerkat.core.help.rememberIntro
+import com.danyt.meerkat.core.help.Intros
+import com.danyt.meerkat.core.help.IntroKeys
+import com.danyt.meerkat.core.help.IntroDialog
+import com.danyt.meerkat.core.design.toHexString
+import com.danyt.meerkat.core.design.SegmentedControl
+import com.danyt.meerkat.core.design.InfoText
+import com.danyt.meerkat.core.design.InfoItem
+import com.danyt.meerkat.core.design.InfoHeading
+import com.danyt.meerkat.core.design.AccentPresets
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
+import androidx.compose.foundation.layout.Column
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.EnterTransition
@@ -43,6 +82,7 @@ import com.danyt.meerkat.core.design.PrimaryButton
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
+    intros: Intros,
     onOpenFeature: (String) -> Unit,
     onOpenAllFeatures: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -52,6 +92,13 @@ fun HomeScreen(
     // The layout as it was when editing started, so Revert can put it back.
     var layoutBeforeEdit by rememberSaveable { mutableStateOf(emptyList<String>()) }
     var confirmExit by rememberSaveable { mutableStateOf(false) }
+    val intro = rememberIntro(intros, IntroKeys.HOME)
+    // Wait for the saved layout, so the welcome lists the right tools from its first frame.
+    if (state.loaded) {
+        IntroDialog(intro, stringResource(R.string.intro_home_title)) {
+            HomeIntro(state, viewModel::setThemeMode, viewModel::setAccent)
+        }
+    }
     val revert = {
         viewModel.setTileOrder(layoutBeforeEdit)
         editing = false
@@ -159,26 +206,108 @@ private fun HomeContent(state: HomeUiState, editing: Boolean, actions: HomeActio
                         modifier = Modifier.animated(this, animate),
                         header = stringResource(R.string.edit_add_header),
                     ) {
-                        state.hidden.forEach { item ->
-                            GroupedRow(
-                                title = stringResource(item.title),
-                                icon = item.icon,
-                                onClick = { actions.onAdd(item.route) },
-                                trailing = {
-                                    Icon(
-                                        imageVector = AppIcons.Plus,
-                                        contentDescription = stringResource(R.string.action_add),
-                                        tint = AppTheme.colors.accent,
-                                        modifier = Modifier.size(22.dp),
-                                    )
-                                },
-                            )
+                        // The card grows and shrinks smoothly, and a tool that was just taken off the
+                        // dashboard fades and unfolds into the list.
+                        Column(if (animate) Modifier.animateContentSize(tween(220)) else Modifier) {
+                            state.hidden.forEach { item ->
+                                key(item.route) {
+                                    val shown = remember {
+                                        MutableTransitionState(!animate).apply { targetState = true }
+                                    }
+                                    AnimatedVisibility(
+                                        visibleState = shown,
+                                        enter = fadeIn(tween(220)) + expandVertically(tween(220)),
+                                    ) {
+                                        GroupedRow(
+                                            title = stringResource(item.title),
+                                            icon = item.icon,
+                                            onClick = { actions.onAdd(item.route) },
+                                            trailing = {
+                                                Icon(
+                                                    imageVector = AppIcons.Plus,
+                                                    contentDescription = stringResource(R.string.action_add),
+                                                    tint = AppTheme.colors.accent,
+                                                    modifier = Modifier.size(22.dp),
+                                                )
+                                            },
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
+}
+
+/** The welcome: what the app is, which tools work today, and the two quickest appearance choices. */
+@Composable
+private fun ColumnScope.HomeIntro(state: HomeUiState, onTheme: (ThemeMode) -> Unit, onAccent: (Int) -> Unit) {
+    val colors = AppTheme.colors
+    InfoText(stringResource(R.string.intro_home_what))
+    InfoHeading(stringResource(R.string.intro_home_tools))
+    // Each tool as its icon and name, with the one-line description below. Spacing keeps them apart.
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        (state.tiles + state.hidden).filter { it.built }.forEach { tool ->
+            Column {
+                val titleStyle = AppTheme.typography.headline
+                val iconSize = with(LocalDensity.current) { titleStyle.fontSize.toDp() }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(tool.icon, contentDescription = null, tint = colors.accent, modifier = Modifier.size(iconSize))
+                    Text(
+                        text = stringResource(tool.title),
+                        style = titleStyle,
+                        color = colors.label,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+                Text(
+                    text = stringResource(tool.subtitle),
+                    style = AppTheme.typography.subhead,
+                    color = colors.secondaryLabel,
+                    modifier = Modifier.padding(start = iconSize + 8.dp, top = 2.dp),
+                )
+            }
+        }
+    }
+    InfoTextWithIcon(stringResource(R.string.intro_home_dashboard), AppIcons.Edit)
+    InfoText(stringResource(R.string.intro_home_back))
+    InfoHeading(stringResource(R.string.settings_appearance))
+    val themeLabels = listOf(R.string.theme_system, R.string.theme_light, R.string.theme_dark)
+    SegmentedControl(
+        options = themeLabels.map { stringResource(it) },
+        selectedIndex = state.themeMode.ordinal,
+        onSelected = { onTheme(ThemeMode.entries[it]) },
+    )
+    // The same swatches as the accent sheet in Settings: a full-height touch area with no press highlight.
+    Row(Modifier.fillMaxWidth()) {
+        AccentPresets.forEach { preset ->
+            val selected = preset.toArgb() == state.accentColor
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClickLabel = preset.toHexString(),
+                    ) { onAccent(preset.toArgb()) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .size(34.dp)
+                        .border(2.dp, if (selected) colors.label else Color.Transparent, CircleShape)
+                        .padding(5.dp)
+                        .background(preset, CircleShape),
+                )
+            }
+        }
+    }
+    InfoText(stringResource(R.string.intro_home_more))
 }
 
 /** The top-right buttons. The normal set and the edit-mode set cross-fade when edit mode starts or ends. */

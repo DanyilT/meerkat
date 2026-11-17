@@ -1,5 +1,6 @@
 package com.danyt.meerkat.feature.home
 
+import com.danyt.meerkat.core.settings.ThemeMode
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -20,11 +21,14 @@ data class HomeItem(
     @param:StringRes val subtitle: Int,
     val icon: ImageVector,
     val built: Boolean,
+    val isNew: Boolean = false,
 )
 
 /**
  * @property tiles tools on the dashboard, in the user's order.
  * @property hidden tools that are not on the dashboard, offered for adding while editing.
+ * @property themeMode the current theme choice, for the appearance part of the introduction.
+ * @property accentColor the current accent as an ARGB integer, or null in monochrome.
  * @property loaded false until the saved layout has been read, so the empty state does not flash.
  */
 @Immutable
@@ -32,6 +36,8 @@ data class HomeUiState(
     val tiles: List<HomeItem> = emptyList(),
     val hidden: List<HomeItem> = emptyList(),
     val loaded: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.System,
+    val accentColor: Int? = null,
 )
 
 class HomeViewModel(
@@ -39,19 +45,39 @@ class HomeViewModel(
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
-    private val byRoute = items.associateBy { it.route }
-
     val uiState: StateFlow<HomeUiState> = settingsRepository.settings
         .map { settings ->
             // Until the user customizes the dashboard, every tool is shown in catalog order.
-            val tiles = settings.dashboardTiles?.mapNotNull(byRoute::get) ?: items
-            HomeUiState(tiles = tiles, hidden = items - tiles.toSet(), loaded = true)
+            val all = items.map { it.copy(isNew = it.built && it.route in settings.newTools) }
+            val byRoute = all.associateBy { it.route }
+            val tiles = settings.dashboardTiles?.mapNotNull(byRoute::get) ?: all
+            HomeUiState(
+                tiles = tiles,
+                hidden = all - tiles.toSet(),
+                loaded = true,
+                themeMode = settings.themeMode,
+                accentColor = settings.accentColor.takeIf { !settings.monochrome },
+            )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     /** Saves a new tile order, given as routes. */
     fun setTileOrder(routes: List<String>) {
         viewModelScope.launch { settingsRepository.setDashboardTiles(routes) }
+    }
+
+    init {
+        // Put tools that arrived with an update on the dashboard before the user sees it.
+        viewModelScope.launch { settingsRepository.reconcileTools(items.filter { it.built }.map { it.route }) }
+    }
+
+    fun setThemeMode(mode: ThemeMode) {
+        viewModelScope.launch { settingsRepository.setThemeMode(mode) }
+    }
+
+    /** Sets one of the preset accent colors, given as an ARGB integer. */
+    fun setAccent(argb: Int) {
+        viewModelScope.launch { settingsRepository.setAccent(argb, monochrome = false) }
     }
 
     /** Adds a tool to the end of the dashboard. */

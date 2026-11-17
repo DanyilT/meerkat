@@ -1,5 +1,6 @@
 package com.danyt.meerkat.feature.settings
 
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,7 @@ import com.danyt.meerkat.core.design.LoadingIndicator
 import com.danyt.meerkat.core.design.SegmentedControl
 import com.danyt.meerkat.core.design.deviceSupportsBlur
 import com.danyt.meerkat.core.design.toHexString
+import com.danyt.meerkat.core.privacy.MacPrivacyDialog
 import com.danyt.meerkat.core.settings.ThemeMode
 import com.danyt.meerkat.core.storage.formatBytes
 
@@ -41,8 +43,11 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCredits: () -> Unit,
     onOpenLicense: () -> Unit,
+    onOpenScope: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showMacTip by rememberSaveable { mutableStateOf(false) }
+    var confirmDeleteReports by rememberSaveable { mutableStateOf(false) }
     var showAccentSheet by rememberSaveable { mutableStateOf(false) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
 
@@ -62,7 +67,29 @@ fun SettingsScreen(
         onClearCacheClick = { confirmClear = true },
         onOpenCredits = onOpenCredits,
         onOpenLicense = onOpenLicense,
+        onOpenScope = onOpenScope,
+        onMacTipClick = { showMacTip = true },
+        onDeleteReportsClick = { confirmDeleteReports = true },
+        onIntros = viewModel::setIntrosEnabled,
+        onResetIntros = viewModel::resetIntros,
     )
+
+    if (confirmDeleteReports) {
+        val count = state.reportCount ?: 0
+        ConfirmDialog(
+            title = stringResource(R.string.reports_delete_all_title),
+            message = pluralStringResource(R.plurals.reports_delete_all_message, count, count),
+            confirmLabel = stringResource(R.string.action_delete),
+            destructive = true,
+            onConfirm = {
+                confirmDeleteReports = false
+                viewModel.deleteAllReports()
+            },
+            onDismiss = { confirmDeleteReports = false },
+        )
+    }
+
+    if (showMacTip) MacPrivacyDialog(onDismiss = { showMacTip = false })
 
     if (showAccentSheet) {
         AccentColorSheet(
@@ -110,6 +137,11 @@ private fun SettingsContent(
     onClearCacheClick: () -> Unit,
     onOpenCredits: () -> Unit,
     onOpenLicense: () -> Unit,
+    onOpenScope: () -> Unit,
+    onMacTipClick: () -> Unit,
+    onDeleteReportsClick: () -> Unit,
+    onIntros: (Boolean) -> Unit,
+    onResetIntros: () -> Unit,
 ) {
     val colors = AppTheme.colors
     val settings = state.settings
@@ -163,6 +195,21 @@ private fun SettingsContent(
             }
         }
         item {
+            val ranges = settings.authorizedRanges.size
+            GroupedSection(
+                header = stringResource(R.string.settings_scanning),
+                footer = stringResource(R.string.settings_scanning_footer),
+            ) {
+                GroupedRow(
+                    title = stringResource(R.string.scope_title),
+                    value = if (ranges == 0) stringResource(R.string.scope_none) else ranges.toString(),
+                    chevron = true,
+                    onClick = onOpenScope,
+                )
+                GroupedRow(title = stringResource(R.string.mac_tip_row), chevron = true, onClick = onMacTipClick)
+            }
+        }
+        item {
             val size = state.cacheSizeBytes
             val canClear = !state.clearingCache && size != null && size > 0
             GroupedSection(
@@ -176,6 +223,32 @@ private fun SettingsContent(
                     enabled = canClear,
                     onClick = onClearCacheClick,
                     trailing = if (state.clearingCache || size == null) ({ LoadingIndicator() }) else null,
+                )
+                val reports = state.reportCount ?: 0
+                GroupedRow(
+                    title = stringResource(R.string.reports_delete_all),
+                    titleColor = colors.destructive,
+                    value = reports.toString(),
+                    enabled = reports > 0,
+                    onClick = onDeleteReportsClick,
+                )
+            }
+        }
+        item {
+            GroupedSection(
+                header = stringResource(R.string.settings_help),
+                footer = stringResource(R.string.settings_help_footer),
+            ) {
+                GroupedSwitchRow(
+                    title = stringResource(R.string.settings_intros),
+                    checked = settings.introsEnabled,
+                    onCheckedChange = onIntros,
+                )
+                GroupedRow(
+                    title = stringResource(R.string.settings_intros_reset),
+                    titleColor = colors.accent,
+                    enabled = settings.introsEnabled && settings.seenIntros.isNotEmpty(),
+                    onClick = onResetIntros,
                 )
             }
         }
@@ -215,6 +288,11 @@ private fun SettingsScreenPreview() {
             onClearCacheClick = {},
             onOpenCredits = {},
             onOpenLicense = {},
+            onOpenScope = {},
+            onMacTipClick = {},
+            onDeleteReportsClick = {},
+            onIntros = {},
+            onResetIntros = {},
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.danyt.meerkat.feature.settings
 
+import com.danyt.meerkat.core.design.AccentPresets
 import android.content.ClipData
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -69,11 +70,6 @@ import com.danyt.meerkat.core.design.toHexString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** The app's own accent choices: eight hues at a similar strength, the default violet first and blue last. */
-private val Presets = listOf(
-    0xFF7C5CFC, 0xFFC04FD9, 0xFFE8528F, 0xFFE5484D, 0xFFF08A24, 0xFF2FB36A, 0xFF1FA6B8, 0xFF3B82F6,
-).map { Color(it) }
-
 private val RowShape = RoundedCornerShape(22.dp)
 
 /**
@@ -130,7 +126,7 @@ private fun AccentColorContent(
                 // Each swatch sits in an equal share of the row, 48dp tall, so the touch target is full size
                 // even though the circle is small.
                 Row(Modifier.fillMaxWidth()) {
-                    Presets.forEach { preset ->
+                    AccentPresets.forEach { preset ->
                         val selected = !monochrome && preset.toArgb() == color.toArgb()
                         Box(
                             modifier = Modifier

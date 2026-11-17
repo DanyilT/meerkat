@@ -1,5 +1,6 @@
 package com.danyt.meerkat.feature.settings
 
+import com.danyt.meerkat.core.reports.ReportStore
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 /**
  * @property cacheSizeBytes current cache size, or null while it is being measured.
  * @property clearingCache true while the cache is being deleted.
+ * @property reportCount how many reports are saved, or null while they are being read.
  * @property freedBytes set after a clear to report the result once, then reset by the screen.
  */
 @Immutable
@@ -28,24 +30,28 @@ data class SettingsUiState(
     val cacheSizeBytes: Long? = null,
     val clearingCache: Boolean = false,
     val freedBytes: Long? = null,
+    val reportCount: Int? = null,
 )
 
 class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val cacheManager: CacheManager,
+    private val reportStore: ReportStore,
 ) : ViewModel() {
 
     private val cacheState = MutableStateFlow(SettingsUiState())
 
-    val uiState: StateFlow<SettingsUiState> = combine(settingsRepository.settings, cacheState) { settings, cache ->
-        cache.copy(settings = settings)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
+    val uiState: StateFlow<SettingsUiState> =
+        combine(settingsRepository.settings, cacheState, reportStore.reports) { settings, cache, reports ->
+            cache.copy(settings = settings, reportCount = reports?.size)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     // Latest accent picked in the sheet. Conflated so a fast drag never queues up disk writes.
     private val accentRequests = Channel<Pair<Int, Boolean>>(Channel.CONFLATED)
 
     init {
         refreshCacheSize()
+        viewModelScope.launch { reportStore.load() }
         viewModelScope.launch {
             for ((argb, monochrome) in accentRequests) {
                 settingsRepository.setAccent(argb, monochrome)
@@ -86,6 +92,20 @@ class SettingsViewModel(
             val remaining = cacheManager.sizeBytes()
             cacheState.update { it.copy(clearingCache = false, freedBytes = freed, cacheSizeBytes = remaining) }
         }
+    }
+
+    fun setIntrosEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setIntrosEnabled(enabled) }
+    }
+
+    /** Makes every screen introduce itself once more. */
+    fun resetIntros() {
+        viewModelScope.launch { settingsRepository.resetIntros() }
+    }
+
+    /** Deletes every saved report. */
+    fun deleteAllReports() {
+        viewModelScope.launch { reportStore.deleteAll() }
     }
 
     fun onFreedMessageShown() {

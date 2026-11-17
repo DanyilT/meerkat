@@ -17,6 +17,11 @@ import androidx.compose.ui.graphics.Color
 /** The default accent, a violet. Used in previews and before settings load. */
 val DefaultAccent = Color(0xFF7C5CFC)
 
+/** The app's own accent choices: eight hues at a similar strength, the default violet first and blue last. */
+val AccentPresets: List<Color> = listOf(
+    0xFF7C5CFC, 0xFFC04FD9, 0xFFE8528F, 0xFFE5484D, 0xFFF08A24, 0xFF2FB36A, 0xFF1FA6B8, 0xFF3B82F6,
+).map { Color(it) }
+
 private const val THEME_FADE_MILLIS = 320
 
 private val LocalAppColors = staticCompositionLocalOf { appColors(dark = false, accent = DefaultAccent) }

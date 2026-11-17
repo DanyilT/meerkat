@@ -12,16 +12,19 @@ import kotlinx.coroutines.withContext
  * clearing can never touch files outside the cache directories.
  *
  * @param cacheDirs directories to manage. Missing directories are ignored.
+ * @param systemSize the cache size as the system counts it, or null when it cannot tell. When given, it is
+ *   what [sizeBytes] reports, so the number matches the app's page in system settings.
  * @param ioDispatcher dispatcher used for disk access.
  */
 class CacheManager(
     private val cacheDirs: List<File>,
+    private val systemSize: (() -> Long?)? = null,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
 
-    /** Returns the total size in bytes of all files in the cache directories. */
+    /** Returns the cache size in bytes: the system's figure when there is one, else the files counted here. */
     suspend fun sizeBytes(): Long = withContext(ioDispatcher) {
-        cacheDirs.sumOf { dir -> children(dir).sumOf(::sizeOf) }
+        systemSize?.invoke() ?: cacheDirs.sumOf { dir -> children(dir).sumOf(::sizeOf) }
     }
 
     /**
@@ -30,7 +33,12 @@ class CacheManager(
      * @return the number of bytes actually freed. Files that could not be deleted are not counted.
      */
     suspend fun clear(): Long = withContext(ioDispatcher) {
-        cacheDirs.sumOf { dir -> children(dir).sumOf(::delete) }
+        val before = systemSize?.invoke()
+        val deleted = cacheDirs.sumOf { dir -> children(dir).sumOf(::delete) }
+        // The system's count also includes things such as folder entries, so report its difference when it
+        // has one. That way "freed" matches what system settings shows going down.
+        val after = systemSize?.invoke()
+        if (before != null && after != null) (before - after).coerceAtLeast(deleted) else deleted
     }
 
     private fun children(dir: File): List<File> = dir.listFiles()?.toList().orEmpty()

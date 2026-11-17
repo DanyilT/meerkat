@@ -10,12 +10,18 @@
     <string name="action_revert">Revert</string>
     <string name="action_clear">Clear</string>
     <string name="action_ok">OK</string>
+    <string name="action_close">Close</string>
+    <string name="action_help">Help</string>
+    <string name="action_expand">Show</string>
+    <string name="action_collapse">Hide</string>
+    <string name="action_delete">Delete</string>
     <string name="action_add">Add</string>
     <string name="action_remove">Remove</string>
     <string name="settings">Settings</string>
     <string name="dashboard">Dashboard</string>
     <string name="all_tools">All Tools</string>
     <string name="soon">Soon</string>
+    <string name="badge_new">New</string>
     <string name="coming_soon">Coming Soon</string>
 
     <!-- Design components -->
@@ -37,7 +43,9 @@
     <string name="feature_lan_title">LAN Scanner</string>
     <string name="feature_lan_description">Find devices on your local network.</string>
     <string name="feature_ports_title">Port Scanner</string>
-    <string name="feature_ports_description">Check which TCP ports are open on a host.</string>
+    <string name="feature_ports_description">Check which ports are open on a host.</string>
+    <string name="feature_hotspot_title">Hotspot</string>
+    <string name="feature_hotspot_description">Check your hotspot and find the devices on it.</string>
     <string name="feature_ssh_title">SSH</string>
     <string name="feature_ssh_description">Connect to a remote shell.</string>
     <string name="feature_traffic_title">Traffic</string>
@@ -45,7 +53,302 @@
     <string name="feature_tools_title">Tools</string>
     <string name="feature_tools_description">Ping, DNS lookup, and other small utilities.</string>
     <string name="feature_reports_title">Reports</string>
-    <string name="feature_reports_description">Save and export scan results.</string>
+    <string name="feature_reports_description">Saved scan results. Export and import.</string>
+
+    <!-- LAN scanner -->
+    <string name="lan_target">Target</string>
+    <string name="lan_target_placeholder" translatable="false">192.168.1.0/24</string>
+    <string name="lan_target_error_empty">Enter an address, a range, or a network such as 192.168.1.0/24.</string>
+    <string name="lan_target_error_malformed">This is not a valid address, range, or network.</string>
+    <string name="lan_target_error_reversed">The range ends before it starts.</string>
+    <string name="lan_target_error_too_large">Too many addresses. One scan covers up to %1$d.</string>
+    <string name="lan_use_network">Use this network (%1$s)</string>
+    <string name="lan_use_hotspot">Use your hotspot network (%1$s)</string>
+    <string name="lan_no_network">Not on Wi-Fi or Ethernet. You can still enter a target that this device can reach.</string>
+    <string name="lan_profile_quick">Quick</string>
+    <string name="lan_profile_full">Full</string>
+    <string name="lan_profile_custom">Custom</string>
+    <string name="lan_profile_quick_description">Ping and 8 common TCP ports. Takes a few seconds.</string>
+    <string name="lan_profile_full_description">Ping, 32 TCP ports, 5 UDP services, and device names. Slower, finds more.</string>
+    <string name="lan_profile_custom_description">Your own probes, ports, and timing.</string>
+    <string name="lan_options">Scan Options</string>
+    <string name="lan_scan">Scan</string>
+    <string name="lan_cancel_scan">Cancel Scan</string>
+    <plurals name="lan_status_running">
+        <item quantity="one">Checked %1$d of %2$d address.</item>
+        <item quantity="other">Checked %1$d of %2$d addresses.</item>
+    </plurals>
+    <plurals name="lan_status_cancelled">
+        <item quantity="one">Cancelled after %1$d of %2$d address.</item>
+        <item quantity="other">Cancelled after %1$d of %2$d addresses.</item>
+    </plurals>
+    <plurals name="lan_status_finished">
+        <item quantity="one">Finished. %1$d address checked.</item>
+        <item quantity="other">Finished. %1$d addresses checked.</item>
+    </plurals>
+    <plurals name="lan_result_devices">
+        <item quantity="one">%1$d device found.</item>
+        <item quantity="other">%1$d devices found.</item>
+    </plurals>
+    <plurals name="lan_devices">
+        <item quantity="one">%1$d device</item>
+        <item quantity="other">%1$d devices</item>
+    </plurals>
+    <string name="lan_none_title">No Devices Found</string>
+    <string name="lan_none_message">Nothing answered. Devices that ignore every probe cannot be seen without root.</string>
+    <string name="lan_device_me">me</string>
+    <string name="lan_open_ports">Open: %1$s</string>
+    <string name="lan_port_udp">%1$d/udp</string>
+    <string name="lan_latency">%1$d ms</string>
+    <string name="lan_latency_under_one">&lt;1 ms</string>
+    <string name="lan_access_title">Local Network Access Needed</string>
+    <string name="lan_access_message">Scanning needs permission to reach devices on your network. Allow “Nearby devices” for Meerkat in Settings.</string>
+    <string name="lan_access_open_settings">Open Settings</string>
+    <string name="lan_options_ping">Ping (ICMP)</string>
+    <string name="lan_options_ping_description">Send an echo request to every address.</string>
+    <string name="lan_options_tcp">TCP ports</string>
+    <string name="lan_options_udp">UDP ports</string>
+    <string name="lan_options_ports_placeholder" translatable="false">22, 80, 8000-8010</string>
+    <string name="lan_options_none">None</string>
+    <string name="lan_options_ports_error">Use numbers from 1 to 65535, separated by commas. Ranges like 8000-8010 work. Up to %1$d ports.</string>
+    <string name="lan_options_timeout">Timeout (ms)</string>
+    <string name="lan_options_concurrency">Probes at the same time</string>
+    <string name="lan_options_range_error">Enter a number from %1$d to %2$d.</string>
+    <string name="lan_options_names">Look Up Names</string>
+    <string name="lan_options_names_description">Ask DNS, mDNS, and NetBIOS for each device’s name.</string>
+    <string name="lan_options_no_probe">Turn on ping or enter at least one port.</string>
+
+    <!-- Device -->
+    <string name="device_details">Details</string>
+    <string name="device_address">Address</string>
+    <string name="device_name">Name</string>
+    <string name="device_mac">MAC address</string>
+    <string name="device_latency">Response time</string>
+    <string name="device_open_ports">Open ports</string>
+    <string name="device_open_ports_footer">Only the ports the network scan tried. Service names are guessed from the port number. Run a port scan to check more.</string>
+    <string name="device_no_open_ports">None found</string>
+    <string name="device_port_scan">Port Scan</string>
+    <string name="device_open_ssh">Open SSH</string>
+    <string name="device_gone">This device is not in the current scan results.</string>
+
+    <!-- Port scanner -->
+    <string name="ports_host">Host</string>
+    <string name="ports_host_placeholder" translatable="false">192.168.1.10</string>
+    <string name="ports_use_own">Use this device\u2019s address</string>
+    <string name="ports_host_error">Enter an IPv4 address such as 192.168.1.10.</string>
+    <string name="ports_tcp" translatable="false">TCP</string>
+    <string name="ports_udp" translatable="false">UDP</string>
+    <string name="ports_preset_common">Common</string>
+    <string name="ports_preset_well_known" translatable="false">1–1024</string>
+    <string name="ports_preset_custom">Custom</string>
+    <string name="ports_custom">Ports</string>
+    <string name="ports_custom_error">Use numbers from 1 to 65535, separated by commas. Ranges like 8000-8010 work.</string>
+    <string name="ports_udp_hint">UDP is slow and often unclear: a port that stays silent may be open or blocked.</string>
+    <plurals name="ports_status_running">
+        <item quantity="one">Checked %1$d of %2$d port.</item>
+        <item quantity="other">Checked %1$d of %2$d ports.</item>
+    </plurals>
+    <plurals name="ports_status_finished">
+        <item quantity="one">Finished. %1$d of %2$d port checked.</item>
+        <item quantity="other">Finished. %1$d of %2$d ports checked.</item>
+    </plurals>
+    <plurals name="ports_status_cancelled">
+        <item quantity="one">Cancelled after %1$d of %2$d port.</item>
+        <item quantity="other">Cancelled after %1$d of %2$d ports.</item>
+    </plurals>
+    <string name="ports_summary">%1$d open, %2$d closed, %3$d no answer.</string>
+    <string name="ports_column_port">Port</string>
+    <string name="ports_column_service">Service</string>
+    <string name="ports_column_time">Time</string>
+    <string name="ports_service_unknown">Unknown</string>
+
+    <!-- Scope guard and privacy -->
+    <string name="settings_scanning">Scanning</string>
+    <string name="settings_scanning_footer">Scanning a network you do not own or manage can be illegal. The scope guard asks before a scan leaves the ranges you listed.</string>
+    <string name="scope_title">Authorized Ranges</string>
+    <string name="scope_none">None</string>
+    <string name="scope_header">Ranges you may scan</string>
+    <string name="scope_footer">Scans of these ranges start without a warning. Anything else asks you to confirm first.</string>
+    <string name="scope_own_header">Always allowed</string>
+    <string name="scope_own_footer">The network this device is connected to and its own hotspot.</string>
+    <string name="scope_own_none">Not connected to a local network</string>
+    <string name="scope_empty">No ranges added</string>
+    <string name="scope_add_label">Add a range</string>
+    <string name="scope_add">Add</string>
+    <string name="scope_add_error">Enter an address, a range, or a network such as 10.0.0.0/8.</string>
+    <string name="scope_remove">Remove %1$s</string>
+    <string name="scope_warning_title">Outside Your Authorized Ranges</string>
+    <string name="scope_warning_message">%1$s is not your current network and is not in your authorized ranges. Scan it only if you own it or have permission.</string>
+    <string name="scope_warning_confirm">Scan Anyway</string>
+    <string name="mac_tip_row">MAC Address Privacy</string>
+    <string name="mac_tip_title">Keep Your MAC Address Random</string>
+    <string name="mac_tip_message">A scan of your local network shows this device’s MAC address to the devices on that network, and no app can hide it. Scans of addresses outside your network, on the internet, do not carry it. Make sure the address is a random one: in Wi-Fi settings, open the network and set Privacy to “Use randomized MAC”. For a new address on every connection, turn on “Wi-Fi non-persistent MAC randomization” in Developer options.</string>
+    <string name="mac_tip_open_wifi">Wi-Fi Settings</string>
+    <string name="mac_tip_dont_show">Never Show</string>
+
+    <!-- Reports -->
+    <string name="report_button">Report</string>
+    <string name="report_sheet_title">Report</string>
+    <string name="report_title">Report</string>
+    <string name="report_save">Save to Reports</string>
+    <string name="report_save_description">Kept encrypted inside the app.</string>
+    <string name="report_export">Export</string>
+    <string name="report_export_text">Export as Text</string>
+    <string name="report_export_text_description">A readable .txt file with details and a table.</string>
+    <string name="report_export_csv">Export as CSV</string>
+    <string name="report_export_csv_description">The table only, for a spreadsheet.</string>
+    <string name="report_export_json">Export as JSON</string>
+    <string name="report_export_json_description">Everything, and it can be imported again.</string>
+    <string name="report_export_note">Exported files are not encrypted.</string>
+    <string name="report_export_duplicate">You exported this report before. Exported files are not encrypted.</string>
+    <string name="report_save_duplicate">Already in Reports. Tap to save a copy.</string>
+    <string name="report_duplicate_title">Already in Reports</string>
+    <string name="report_duplicate_save_message">A report with the same content is already saved. Save another copy?</string>
+    <string name="report_duplicate_save_confirm">Save Copy</string>
+    <string name="report_duplicate_import_message">A report with the same content as “%1$s” is already saved. Import it as another copy?</string>
+    <string name="report_duplicate_import_confirm">Import Copy</string>
+    <string name="report_export_failed">The file could not be written.</string>
+    <string name="report_saved_title">Report Saved</string>
+    <string name="report_saved_message">You can find it under Reports.</string>
+    <string name="report_open">Open Report</string>
+    <string name="report_edit">Edit</string>
+    <string name="report_edit_title">Title</string>
+    <string name="report_edit_notes">Notes</string>
+    <string name="report_edit_notes_placeholder">What this scan was for</string>
+    <string name="report_edit_cancel">Discard changes</string>
+    <string name="report_edit_done">Save changes</string>
+    <string name="report_copy_hint">Hold a value or a table row to copy it.</string>
+    <string name="reports_delete_all">Delete All Reports</string>
+    <string name="reports_delete_all_title">Delete All Reports?</string>
+    <plurals name="reports_delete_all_message">
+        <item quantity="one">%1$d saved report will be deleted. This cannot be undone.</item>
+        <item quantity="other">%1$d saved reports will be deleted. This cannot be undone.</item>
+    </plurals>
+    <string name="report_save_failed_title">Report Not Saved</string>
+    <string name="report_save_failed_message">The report could not be stored on this device.</string>
+    <string name="report_delete_title">Delete Report?</string>
+    <string name="report_delete_message">This cannot be undone.</string>
+    <string name="report_missing">This report no longer exists.</string>
+    <string name="report_saved_on">Scanned</string>
+    <string name="report_fingerprint">SHA-256</string>
+    <string name="report_tool">Tool</string>
+    <string name="report_status">Status</string>
+    <string name="report_status_finished">Finished</string>
+    <string name="report_status_cancelled">Cancelled</string>
+    <string name="report_addresses_checked">Addresses checked</string>
+    <string name="report_devices_found">Devices found</string>
+    <string name="report_protocol">Protocol</string>
+    <string name="report_mode">Mode</string>
+    <string name="report_ports_set">Ports</string>
+    <string name="report_ports_checked">Ports checked</string>
+    <string name="report_ports_result">Result</string>
+    <string name="report_response_ms">Response (ms)</string>
+    <string name="reports_import">Import</string>
+    <string name="reports_import_failed">Import Failed</string>
+    <string name="reports_import_unreadable">The file could not be read, or it is larger than 2 MB.</string>
+    <string name="reports_import_not_report">This is not a report exported as JSON from Meerkat.</string>
+    <string name="reports_empty_title">No Reports</string>
+    <string name="reports_empty_message">Save a report from a scanner with the report button, or import one that was exported as JSON.</string>
+    <string name="reports_footer">Reports are stored encrypted on this device and are not backed up.</string>
+    <string name="reports_row_subtitle">%1$s · %2$s</string>
+
+    <!-- Help and introductions -->
+    <string name="intro_button">About this tool</string>
+    <string name="intro_modes">Modes</string>
+    <string name="intro_features">What you can do</string>
+    <string name="intro_report">When a scan has ended, the report button at the top right saves the results in the app or exports them as text, CSV, or JSON.</string>
+    <string name="intro_scope">The shield button opens your authorized ranges. Scans outside them, and outside your own network, ask you to confirm first.</string>
+    <string name="intro_home_title">Welcome to Meerkat Toolbox</string>
+    <string name="intro_home_what">A toolkit for looking at networks you own or manage. It has no ads, no tracking, and sends nothing anywhere unless you start a scan or action.</string>
+    <string name="intro_home_tools">Tools that work today</string>
+    <string name="intro_home_dashboard" formatted="false">The %1$s at the top lets you arrange the dashboard. Tools marked “Soon” are not built yet.</string>
+    <string name="intro_home_back">To go back, tap the page title or use the system back gesture. Tap this title, or anywhere outside, to close windows like this one.</string>
+    <string name="intro_home_more">More choices, including any accent color, are in Settings.</string>
+    <string name="intro_lan_what">Finds the devices on a network. Type an address, a range, or a network such as 192.168.1.0/24, or use the buttons in the field to fill in your Wi-Fi network or hotspot.</string>
+    <string name="intro_lan_features">Tap a device to see its details and scan its ports. Your own device is listed first, marked “me”. The “?” next to the mode tells you exactly what a scan sends.</string>
+    <string name="intro_ports_what" formatted="false">Checks which ports are open on one device, over TCP or UDP. The %1$s button in the field fills in this device’s own address, to see what it exposes.</string>
+    <string name="intro_ports_common">About 100 ports with a well-known use.</string>
+    <string name="intro_ports_well_known">Every port from 1 to 1024.</string>
+    <string name="intro_ports_custom">Your own list, such as 22, 80, 8000-8010.</string>
+    <string name="intro_ports_features">Results show each open port with the service that usually runs there. That name is a guess from the port number.</string>
+    <string name="intro_reports_what">Keeps the scan results you saved from the other tools.</string>
+    <string name="intro_reports_features">Open a report to give it your own title and notes, export it, or delete it. The plus button imports a report that was exported as JSON. Hold a value to copy it.</string>
+    <string name="intro_reports_encrypted">Saved reports are encrypted with a key that never leaves this device, and they are not backed up. Exported files are not encrypted.</string>
+    <string name="settings_help">Help</string>
+    <string name="settings_help_footer">Each screen explains itself the first time you open it. The info button at the top of a screen shows it again.</string>
+    <string name="settings_intros">Introductions and Info Buttons</string>
+    <string name="settings_intros_reset">Show Introductions Again</string>
+    <string name="help_ports_title">Ports</string>
+    <string name="help_ports_format">Separate ports with commas, and write ranges with a dash: 22, 80, 8000-8010. Ports are numbered 1 to 65535.</string>
+    <string name="help_ports_ranges">Ranges</string>
+    <string name="help_ports_range_well_known">Well-known ports, used by standard services such as web, mail, and SSH.</string>
+    <string name="help_ports_range_registered">Registered ports, used by applications such as databases, games, and media servers.</string>
+    <string name="help_ports_range_dynamic">Dynamic ports, handed out for short-lived connections. Rarely worth scanning.</string>
+    <string name="help_ports_common_tcp">Common TCP ports</string>
+    <string name="help_ports_common_udp">Common UDP ports</string>
+    <string name="help_ports_guess">The usual service for each port. Any program can listen on any port.</string>
+    <string name="help_scan_title">%1$s Scan</string>
+    <string name="help_scan_intro">Every address in the target is probed. A device is listed as soon as one probe gets any answer from it.</string>
+    <string name="help_scan_invalid">The custom options are not valid yet. Open Scan Options to fix them.</string>
+    <string name="help_scan_ping">Sends one ICMP echo request (type 8) with 8 bytes of data and waits for the echo reply (type 0). Many phones and firewalls ignore pings.</string>
+    <string name="help_scan_tcp_heading">TCP connect</string>
+    <string name="help_scan_tcp">Opens a full TCP connection to each port (SYN, SYN-ACK, ACK) and closes it at once. No data is sent. A completed connection means the port is open. A reset (RST) means the port is closed, which still proves the device is there. No reply means filtered or absent.</string>
+    <string name="help_scan_udp_heading">UDP</string>
+    <string name="help_scan_udp">Sends one datagram to each port, shaped as a real request for the usual service: a DNS query to 53, an NTP request to 123, a NetBIOS status query to 137, an SSDP search to 1900, an mDNS query to 5353, and an empty datagram elsewhere. An answer means open. An ICMP “port unreachable” means closed. Silence proves nothing.</string>
+    <string name="help_scan_ports">Ports: %1$s</string>
+    <string name="help_scan_timing_heading">Timing</string>
+    <plurals name="help_scan_timing">
+        <item quantity="one">Up to %1$d probe runs at a time, and it waits up to %2$d ms for an answer.</item>
+        <item quantity="other">Up to %1$d probes run at the same time, and each waits up to %2$d ms for an answer.</item>
+    </plurals>
+    <string name="help_scan_names_off">Names are not looked up in this mode.</string>
+    <string name="help_scan_limits_heading">Limits</string>
+    <string name="help_scan_limits">A device that ignores every probe stays invisible. SYN (half-open) scans and reading the ARP table need root, so they are not used.</string>
+    <string name="help_names_intro">For each device found, the scan asks three sources for a name and takes the first answer.</string>
+    <string name="help_names_dns_label">DNS</string>
+    <string name="help_names_dns_default">A reverse lookup (PTR record) through the DNS servers your network gave this device. That is usually your router, which often knows the names of its own devices.</string>
+    <string name="help_names_dns_custom">A reverse lookup (PTR record) sent directly to %1$s. A public server does not know the devices on a private network.</string>
+    <string name="help_names_mdns_label">mDNS</string>
+    <string name="help_names_mdns">A direct question to the device on UDP port 5353. Apple devices, Linux machines, printers, and many smart devices answer.</string>
+    <string name="help_names_netbios_label">NetBIOS</string>
+    <string name="help_names_netbios">A status query to the device on UDP port 137. Windows and file servers answer, and may include their MAC address.</string>
+    <string name="help_names_privacy">Whichever DNS server is asked learns which addresses you looked up. Choose a public server only for public addresses.</string>
+    <string name="lan_options_dns">DNS server for names</string>
+    <string name="lan_options_dns_default">Your network’s own</string>
+    <string name="lan_options_dns_network">Network</string>
+    <string name="lan_options_dns_choose">Choose a DNS server</string>
+
+    <!-- Hotspot -->
+    <string name="hotspot_status">Status</string>
+    <string name="hotspot_status_footer">Checked every few seconds while this screen is open, by reading this device’s own network settings. Nothing is sent.</string>
+    <string name="hotspot_on">On</string>
+    <string name="hotspot_off">Off</string>
+    <string name="hotspot_network">Network</string>
+    <string name="hotspot_own_address">This device</string>
+    <string name="hotspot_scan">Scan Connected Devices</string>
+    <string name="hotspot_open_settings">Open Hotspot Settings</string>
+    <string name="hotspot_local">Local-only hotspot</string>
+    <string name="hotspot_local_footer">A Wi-Fi network without internet that devices can join to reach this device. Android picks the name and password. It stops when you stop it or close the app. Some devices drop their own Wi-Fi connection while it runs.</string>
+    <string name="hotspot_local_unsupported">The local-only hotspot needs Android 13 or newer. Use Open Hotspot Settings for the normal hotspot.</string>
+    <string name="hotspot_local_start">Start Local-Only Hotspot</string>
+    <string name="hotspot_local_starting">Starting…</string>
+    <string name="hotspot_local_stop">Stop Local-Only Hotspot</string>
+    <string name="hotspot_ssid">Network name</string>
+    <string name="hotspot_qr_show">Share with QR Code</string>
+    <string name="hotspot_qr_title">Join the Hotspot</string>
+    <string name="hotspot_qr_description">QR code to join the Wi-Fi network %1$s</string>
+    <string name="hotspot_qr_hint">Point the other device\u2019s camera at the code, or scan it from its Wi-Fi settings. It holds the network name and password.</string>
+    <string name="hotspot_password">Password</string>
+    <string name="hotspot_permission_title">Nearby Devices Needed</string>
+    <string name="hotspot_permission_message">Starting a hotspot needs the “Nearby devices” permission. Allow it for Meerkat in Settings.</string>
+    <string name="hotspot_failed_mode">The hotspot could not start while this device’s normal hotspot or another Wi-Fi mode is on.</string>
+    <string name="hotspot_failed_channel">No free Wi-Fi channel was available for the hotspot.</string>
+    <string name="hotspot_failed_disallowed">This device does not allow apps to start a hotspot.</string>
+    <string name="hotspot_failed_other">The hotspot could not start. Try again, or use the normal hotspot in Settings.</string>
+    <string name="hotspot_limits">Android does not let apps list the devices on a hotspot, see their traffic, or block them. Finding them works with a scan of the hotspot network. Control over them needs a rooted phone.</string>
+    <string name="intro_hotspot_what">Shows whether this device’s hotspot is on and which network it uses, and lets you scan the devices that joined it.</string>
+    <string name="intro_hotspot_features">Turn on the normal hotspot, which shares your internet, in system settings. Or start a local-only hotspot from here: no internet, but enough for devices to reach this device.</string>
+    <string name="intro_hotspot_limits_heading">Limits</string>
 
     <!-- Dashboard -->
     <string name="edit_dashboard">Edit Dashboard</string>

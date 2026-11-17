@@ -1,5 +1,6 @@
 package com.danyt.meerkat.core.design
 
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -61,6 +62,7 @@ data class SortState(val columnIndex: Int, val ascending: Boolean = true)
  * flips direction, a different column starts ascending.
  *
  * @param rows cell text per row, in the same order as [columns].
+ * @param onRowLongClick called with a row's index on a long press, for example to copy the row.
  * @param sort current sort, shown as an arrow in the header.
  */
 @Composable
@@ -70,6 +72,7 @@ fun DataTable(
     modifier: Modifier = Modifier,
     sort: SortState? = null,
     onSortChange: ((SortState) -> Unit)? = null,
+    onRowLongClick: ((Int) -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(22.dp)
@@ -109,9 +112,14 @@ fun DataTable(
                 }
             }
         }
-        rows.forEach { row ->
+        rows.forEachIndexed { rowIndex, row ->
             Hairline()
-            TableRow(minHeight = 44) {
+            val press = if (onRowLongClick != null) {
+                Modifier.combinedClickable(onLongClick = { onRowLongClick(rowIndex) }, onClick = {})
+            } else {
+                Modifier
+            }
+            TableRow(minHeight = 44, modifier = press) {
                 columns.forEachIndexed { index, column ->
                     Text(
                         text = row.getOrElse(index) { "" },
@@ -129,9 +137,9 @@ fun DataTable(
 }
 
 @Composable
-private fun TableRow(minHeight: Int, content: @Composable RowScope.() -> Unit) {
+private fun TableRow(minHeight: Int, modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = minHeight.dp).padding(horizontal = 16.dp),
+        modifier = modifier.fillMaxWidth().heightIn(min = minHeight.dp).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         content = content,

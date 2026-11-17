@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
 /**
@@ -66,7 +67,14 @@ fun SegmentedControl(
             animationSpec = if (animate) spring<Dp>(dampingRatio = 0.82f, stiffness = 420f) else snap(),
             label = "segment",
         )
-        Box(Modifier.offset(x = indicatorX).width(segmentWidth).fillMaxHeight().background(colors.accent, CircleShape))
+        // Moved during layout, not composition, so the slide does not recompose the control on every frame.
+        Box(
+            Modifier
+                .offset { IntOffset(indicatorX.roundToPx(), 0) }
+                .width(segmentWidth)
+                .fillMaxHeight()
+                .background(colors.accent, CircleShape),
+        )
         Row(Modifier.fillMaxSize().selectableGroup()) {
             options.forEachIndexed { index, option ->
                 val selected = index == selectedIndex

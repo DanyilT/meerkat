@@ -50,7 +50,11 @@ private fun FeaturesContent(
                         icon = item.icon,
                         chevron = true,
                         onClick = { onOpenFeature(item.route) },
-                        trailing = if (item.built) null else ({ Badge(stringResource(R.string.soon)) }),
+                        trailing = when {
+                            !item.built -> ({ Badge(stringResource(R.string.soon)) })
+                            item.isNew -> ({ Badge(stringResource(R.string.badge_new), emphasized = true) })
+                            else -> null
+                        },
                     )
                 }
             }

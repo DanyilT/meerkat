@@ -36,7 +36,8 @@ object AppIcons {
         listOf(
             ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Check, Close, Search, Clock, Info, Home, Plus,
             Edit, Grid,
-            Lan, Ports, Terminal, Traffic, Tools, Reports, Settings,
+            Lan, Ports, Terminal, Traffic, Tools, Reports, Settings, Hotspot, Export, Trash, Wifi, Ethernet,
+            Pin, Help, Shield,
         ).map { it.name to it }
     }
 
@@ -63,6 +64,67 @@ object AppIcons {
         icon("Home") {
             moveTo(3.5f, 11.5f); lineTo(12f, 4f); lineTo(20.5f, 11.5f)
             moveTo(6f, 9.5f); lineTo(6f, 20f); lineTo(18f, 20f); lineTo(18f, 9.5f)
+        }
+    }
+    val Hotspot by lazy {
+        icon("Hotspot") {
+            circle(12f, 13f, 1.6f)
+            moveTo(7.8f, 17.2f); arcTo(6f, 6f, 0f, true, true, 16.2f, 17.2f)
+            moveTo(5.3f, 19.7f); arcTo(9.5f, 9.5f, 0f, true, true, 18.7f, 19.7f)
+        }
+    }
+    val Wifi by lazy {
+        icon("Wifi") {
+            circle(12f, 18.2f, 0.9f)
+            moveTo(8.6f, 14.8f); arcTo(4.8f, 4.8f, 0f, false, true, 15.4f, 14.8f)
+            moveTo(5.6f, 11.6f); arcTo(9f, 9f, 0f, false, true, 18.4f, 11.6f)
+            moveTo(2.8f, 8.4f); arcTo(13f, 13f, 0f, false, true, 21.2f, 8.4f)
+        }
+    }
+    val Ethernet by lazy {
+        icon("Ethernet") {
+            moveTo(4f, 5f); lineTo(20f, 5f); lineTo(20f, 15f); lineTo(16.5f, 15f); lineTo(16.5f, 19f)
+            lineTo(7.5f, 19f); lineTo(7.5f, 15f); lineTo(4f, 15f); close()
+            moveTo(8.5f, 8.5f); lineTo(8.5f, 11f)
+            moveTo(12f, 8.5f); lineTo(12f, 11f)
+            moveTo(15.5f, 8.5f); lineTo(15.5f, 11f)
+        }
+    }
+    /** A pin with a round head, standing straight up: "here", this device. */
+    val Pin by lazy {
+        icon("Pin") {
+            // A solid ball, so it does not read as a magnifying glass: rings close enough to fill it.
+            circle(12f, 7f, 0.9f)
+            circle(12f, 7f, 1.9f)
+            circle(12f, 7f, 2.8f)
+            moveTo(12f, 10.5f); lineTo(12f, 21f)
+        }
+    }
+    val Help by lazy {
+        icon("Help") {
+            circle(12f, 12f, 9f)
+            moveTo(9.4f, 9.6f); arcTo(2.7f, 2.7f, 0f, true, true, 12f, 12.9f); lineTo(12f, 13.8f)
+            moveTo(12f, 16.6f); lineTo(12f, 16.7f)
+        }
+    }
+    val Shield by lazy {
+        icon("Shield") {
+            moveTo(12f, 3f); lineTo(19f, 6f); lineTo(19f, 11f); arcTo(9.5f, 9.5f, 0f, false, true, 12f, 21f)
+            arcTo(9.5f, 9.5f, 0f, false, true, 5f, 11f); lineTo(5f, 6f); close()
+        }
+    }
+    val Export by lazy {
+        icon("Export") {
+            moveTo(12f, 15f); lineTo(12f, 4f)
+            moveTo(8f, 8f); lineTo(12f, 4f); lineTo(16f, 8f)
+            moveTo(5f, 13f); lineTo(5f, 19f); lineTo(19f, 19f); lineTo(19f, 13f)
+        }
+    }
+    val Trash by lazy {
+        icon("Trash") {
+            moveTo(5f, 7f); lineTo(19f, 7f)
+            moveTo(10f, 7f); lineTo(10f, 4.5f); lineTo(14f, 4.5f); lineTo(14f, 7f)
+            moveTo(7f, 7f); lineTo(8f, 20f); lineTo(16f, 20f); lineTo(17f, 7f)
         }
     }
     val Plus by lazy { icon("Plus", 2.2f) { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) } }

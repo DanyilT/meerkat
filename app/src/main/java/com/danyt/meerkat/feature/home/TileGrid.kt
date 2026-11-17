@@ -208,7 +208,12 @@ internal fun TileGrid(
                             .then(press)
                             .then(drag),
                         subtitle = stringResource(item.subtitle),
-                        badge = if (item.built) null else stringResource(R.string.soon),
+                        badge = when {
+                            !item.built -> stringResource(R.string.soon)
+                            item.isNew -> stringResource(R.string.badge_new)
+                            else -> null
+                        },
+                        badgeEmphasized = item.isNew,
                         action = if (editing) ({ RemoveButton(title) { onRemove(item.route) } }) else null,
                     )
                 }
