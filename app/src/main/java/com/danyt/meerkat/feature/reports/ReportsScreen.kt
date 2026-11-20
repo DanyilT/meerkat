@@ -123,20 +123,27 @@ private fun ReportsContent(
                     modifier = Modifier.fillParentMaxHeight(0.7f),
                 )
             }
-            else -> item {
-                GroupedSection(footer = stringResource(R.string.reports_footer)) {
-                    reports.forEach { report ->
-                        GroupedRow(
-                            title = report.displayTitle,
-                            subtitle = stringResource(
-                                R.string.reports_row_subtitle,
-                                stringResource(report.kind.label),
-                                formatReportDate(report.createdAt),
-                            ),
-                            icon = report.kind.icon,
-                            chevron = true,
-                            onClick = { onOpenReport(report.id) },
-                        )
+            else -> {
+                // One section per tool, in the order the tools are listed; the list keeps its newest-first order
+                // within each. The footer goes under the last section.
+                val groups = reports.groupBy { it.kind }.toSortedMap(compareBy { it.ordinal })
+                val last = groups.lastKey()
+                groups.forEach { (kind, kindReports) ->
+                    item(key = kind.code) {
+                        GroupedSection(
+                            header = stringResource(kind.label),
+                            footer = if (kind == last) stringResource(R.string.reports_footer) else null,
+                        ) {
+                            kindReports.forEach { report ->
+                                GroupedRow(
+                                    title = report.displayTitle,
+                                    subtitle = formatReportDate(report.createdAt),
+                                    icon = kind.icon,
+                                    chevron = true,
+                                    onClick = { onOpenReport(report.id) },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -148,12 +155,20 @@ internal val ReportKind.label: Int
     get() = when (this) {
         ReportKind.Lan -> R.string.feature_lan_title
         ReportKind.Ports -> R.string.feature_ports_title
+        ReportKind.Wifi -> R.string.report_kind_wifi
+        ReportKind.Bluetooth -> R.string.report_kind_bluetooth
+        ReportKind.Cell -> R.string.report_kind_cell
+        ReportKind.Nfc -> R.string.report_kind_nfc
     }
 
 private val ReportKind.icon
     get() = when (this) {
         ReportKind.Lan -> AppIcons.Lan
         ReportKind.Ports -> AppIcons.Ports
+        ReportKind.Wifi -> AppIcons.Wifi
+        ReportKind.Bluetooth -> AppIcons.Bluetooth
+        ReportKind.Cell -> AppIcons.Cell
+        ReportKind.Nfc -> AppIcons.Nfc
     }
 
 @Preview

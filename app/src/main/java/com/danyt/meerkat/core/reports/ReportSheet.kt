@@ -59,7 +59,8 @@ fun ReportSheet(
  * After a successful save the message offers to open the saved report. After a failed one it says so.
  *
  * @param visible whether the sheet is open.
- * @param report builds the report from the tool's current results. Called when the sheet opens and on save.
+ * @param report builds the report from the tool's current results. Called once when the sheet opens; exports,
+ *   the copy check, and Save all use that one snapshot, even while the tool keeps scanning.
  * @param onSave stores a report and reports back the stored copy, or null when storing failed.
  * @param onOpenReport opens the saved report with the given id.
  */
@@ -76,13 +77,14 @@ fun ToolReportSheet(
     var savedId by rememberSaveable { mutableStateOf<String?>(null) }
     var failed by rememberSaveable { mutableStateOf(false) }
     if (visible) {
+        val snapshot = remember { report() }
         ReportSheet(
-            report = remember { report() },
+            report = snapshot,
             hashes = hashes,
             onDismiss = onDismiss,
             onExported = onExported,
             onSave = {
-                onSave(report()) { stored ->
+                onSave(snapshot) { stored ->
                     savedId = stored?.id
                     failed = stored == null
                 }

@@ -1,39 +1,34 @@
 package com.danyt.meerkat.feature.hotspot
 
-import com.danyt.meerkat.core.design.qrBackground
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
-import androidx.compose.material3.Text
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedContent
-import com.danyt.meerkat.core.qr.wifiQrText
-import com.danyt.meerkat.core.design.QrImage
-import com.danyt.meerkat.core.design.InfoDialog
-import androidx.compose.ui.Alignment
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -51,12 +46,16 @@ import com.danyt.meerkat.core.design.ConfirmDialog
 import com.danyt.meerkat.core.design.GroupedRow
 import com.danyt.meerkat.core.design.GroupedSection
 import com.danyt.meerkat.core.design.IconButton
+import com.danyt.meerkat.core.design.InfoDialog
 import com.danyt.meerkat.core.design.InfoHeading
 import com.danyt.meerkat.core.design.InfoText
 import com.danyt.meerkat.core.design.LoadingIndicator
 import com.danyt.meerkat.core.design.Note
 import com.danyt.meerkat.core.design.PrimaryButton
+import com.danyt.meerkat.core.design.QrImage
 import com.danyt.meerkat.core.design.SecondaryButton
+import com.danyt.meerkat.core.design.animated
+import com.danyt.meerkat.core.design.qrBackground
 import com.danyt.meerkat.core.design.rememberCopyText
 import com.danyt.meerkat.core.help.IntroDialog
 import com.danyt.meerkat.core.help.IntroKeys
@@ -67,6 +66,7 @@ import com.danyt.meerkat.core.net.HotspotState
 import com.danyt.meerkat.core.net.LocalHotspot
 import com.danyt.meerkat.core.permission.openAppSettings
 import com.danyt.meerkat.core.permission.rememberPermissionRequest
+import com.danyt.meerkat.core.qr.wifiQrText
 import kotlinx.coroutines.delay
 
 /**
@@ -319,10 +319,6 @@ private fun unfold(animate: Boolean) =
 
 private fun fold(animate: Boolean) =
     if (animate) shrinkVertically(tween(220)) + fadeOut(tween(160)) else ExitTransition.None
-
-/** Animates a list item appearing, disappearing, and moving, unless animations are turned off. */
-private fun Modifier.animated(scope: LazyItemScope, enabled: Boolean): Modifier =
-    if (enabled) with(scope) { animateItem() } else this
 
 private val HotspotFailure.message: Int
     get() = when (this) {

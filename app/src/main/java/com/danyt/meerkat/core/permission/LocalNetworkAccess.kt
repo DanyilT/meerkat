@@ -1,5 +1,6 @@
 package com.danyt.meerkat.core.permission
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -47,4 +48,19 @@ fun openAppSettings(context: Context) {
     val app = Uri.fromParts("package", context.packageName, null)
     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, app).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     context.startActivity(intent)
+}
+
+/**
+ * Opens a system settings screen, such as [Settings.ACTION_BLUETOOTH_SETTINGS]. Falls back to the main settings
+ * screen on the rare device that does not have it.
+ */
+fun openSystemSettings(context: Context, action: String) {
+    for (intent in listOf(Intent(action), Intent(Settings.ACTION_SETTINGS))) {
+        try {
+            context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            return
+        } catch (_: ActivityNotFoundException) {
+            // Try the next one.
+        }
+    }
 }

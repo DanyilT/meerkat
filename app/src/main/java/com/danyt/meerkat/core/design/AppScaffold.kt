@@ -73,9 +73,10 @@ import kotlinx.coroutines.delay
 
 private val BarHeight = 60.dp
 private val CollapseDistance = 24.dp
-private const val HOLD_REVEAL_MILLIS = 180L
+/** How long a title must be held before it shows what a tap does. Shared with [InfoDialog]. */
+internal const val HOLD_REVEAL_MILLIS = 180L
 private const val CollapsedTitleScale = 0.72f
-private const val BACK_REVEAL_MILLIS = 190
+internal const val BACK_REVEAL_MILLIS = 190
 private const val TITLE_SWAP_MILLIS = 340
 private val TitleAutoSize = TextAutoSize.StepBased(minFontSize = 20.sp, maxFontSize = 34.sp, stepSize = 1.sp)
 

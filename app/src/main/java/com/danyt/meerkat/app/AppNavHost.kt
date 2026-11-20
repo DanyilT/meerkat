@@ -42,11 +42,15 @@ import com.danyt.meerkat.feature.home.FeaturesScreen
 import com.danyt.meerkat.feature.home.FeaturesViewModel
 import com.danyt.meerkat.feature.home.HomeItem
 import com.danyt.meerkat.feature.home.HomeScreen
+import com.danyt.meerkat.feature.home.HomeTab
 import com.danyt.meerkat.feature.home.HomeViewModel
 import com.danyt.meerkat.feature.lan.DeviceScreen
 import com.danyt.meerkat.feature.lan.DeviceViewModel
 import com.danyt.meerkat.feature.lan.LanScreen
 import com.danyt.meerkat.feature.lan.LanViewModel
+import com.danyt.meerkat.feature.nearby.NearbyScreen
+import com.danyt.meerkat.feature.nearby.NearbyViewModel
+import androidx.compose.ui.platform.LocalContext
 import com.danyt.meerkat.feature.ports.PortsScreen
 import com.danyt.meerkat.feature.ports.PortsViewModel
 import com.danyt.meerkat.feature.reports.ReportScreen
@@ -59,11 +63,24 @@ import com.danyt.meerkat.feature.settings.ScopeScreen
 import com.danyt.meerkat.feature.settings.ScopeViewModel
 import com.danyt.meerkat.feature.settings.SettingsScreen
 import com.danyt.meerkat.feature.settings.SettingsViewModel
+import com.danyt.meerkat.feature.settings.TabbedTool
+import com.danyt.meerkat.feature.settings.ToolTab
+import com.danyt.meerkat.feature.settings.ToolSettingsScreen
+import com.danyt.meerkat.feature.settings.ToolSettingsViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 private const val SLIDE_MILLIS = 320
 private const val GESTURE_FINISH_MILLIS = 140
 
-private val homeItems = Features.map { HomeItem(it.route, it.title, it.description, it.icon, it.built) }
+/** Tools with tabs, for the Settings choice of which tab each opens on. */
+private val tabbedTools = Features.filter { it.built && it.tabs.isNotEmpty() }.map { feature ->
+    TabbedTool(feature.route, feature.title, feature.tabs.map { ToolTab(it.key, it.title, it.icon) })
+}
+
+private val homeItems = Features.map { feature ->
+    val tabs = feature.tabs.map { HomeTab(Routes.tab(feature.route, it.key), it.title, it.icon) }
+    HomeItem(feature.route, feature.title, feature.description, feature.icon, feature.built, tabs = tabs)
+}
 
 /** The app's single navigation graph. */
 @Composable
@@ -74,11 +91,14 @@ fun AppNavHost(
 ) {
     val animate = AppTheme.animationsEnabled
     val open: (String) -> Unit = { route -> navController.navigate(route) { launchSingleTop = true } }
-    // Opening a tool from the dashboard or the list takes away its "New" badge.
+    // Opening a tool from the dashboard or the list takes away its "New" badge, whichever tab it opens on.
     val scope = rememberCoroutineScope()
+    // A tool with tabs opened without a tab opens on the one chosen in Settings.
+    val settings by container.settingsRepository.settings.collectAsStateWithLifecycle(initialValue = null)
     val openTool: (String) -> Unit = { route ->
-        scope.launch { container.settingsRepository.markToolOpened(route) }
-        open(route)
+        scope.launch { container.settingsRepository.markToolOpened(route.substringBefore('?')) }
+        val tab = settings?.startTabOf(route)?.takeIf { '?' !in route }
+        open(if (tab != null) Routes.tab(route, tab) else route)
     }
     val back: () -> Unit = { if (navController.previousBackStackEntry != null) navController.popBackStack() }
     val slide = tween<IntOffset>(SLIDE_MILLIS)
@@ -182,7 +202,9 @@ fun AppNavHost(
             val address = entry.arguments?.getString(Routes.ARG_ADDRESS).orEmpty()
             val viewModel: DeviceViewModel = viewModel(
                 factory = viewModelFactory { 
-                    initializer { DeviceViewModel(container.lanScanSession, container.localNetwork, address) }
+                    initializer {
+                        DeviceViewModel(container.lanScanSession, container.localNetwork, address, container.makerList)
+                    }
                  },
             )
             DeviceScreen(
@@ -230,6 +252,40 @@ fun AppNavHost(
                 onScan = { open(Routes.lan(it)) },
             )
         }
+        // The tab is optional: the tile opens Wi-Fi, a long press on it can open another tab.
+        screen("${Routes.NEARBY}?${Routes.ARG_TAB}={${Routes.ARG_TAB}}") { entry ->
+            val context = LocalContext.current
+            val viewModel: NearbyViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        NearbyViewModel(
+                            context = context,
+                            wifiScanner = container.wifiScanner,
+                            bluetoothScanner = container.bluetoothScanner,
+                            cellReader = container.cellReader,
+                            nfcReader = container.nfcReader,
+                            reportStore = container.reportStore,
+                            settingsRepository = container.settingsRepository,
+                            initial = settings,
+                            makerList = container.makerList,
+                        )
+                    }
+                },
+            )
+            NearbyScreen(
+                viewModel = viewModel,
+                onTabShown = { tab -> scope.launch { container.settingsRepository.setLastTab(Routes.NEARBY, tab) } },
+                onOpenToolSettings = { open(Routes.TOOL_SETTINGS) },
+                onScanNetwork = {
+                    // The network as it is now; without one, the scanner fills in what it can find.
+                    open(container.localNetwork.currentSubnet()?.cidr?.let(Routes::lan) ?: Routes.LAN)
+                },
+                intros = container.intros,
+                initialTab = entry.arguments?.getString(Routes.ARG_TAB),
+                onBack = back,
+                onOpenReport = { open(Routes.report(it)) },
+            )
+        }
         screen(Routes.REPORTS) {
             val viewModel: ReportsViewModel = viewModel(
                 factory = viewModelFactory { initializer { ReportsViewModel(container.reportStore) } },
@@ -272,6 +328,19 @@ fun AppNavHost(
                 onBack = back,
                 onOpenCredits = { open(Routes.CREDITS) },
                 onOpenLicense = { open(Routes.LICENSE) },
+                onOpenTools = { open(Routes.TOOL_SETTINGS) },
+            )
+        }
+        screen(Routes.TOOL_SETTINGS) {
+            val viewModel: ToolSettingsViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { ToolSettingsViewModel(container.settingsRepository, container.makerList) }
+                },
+            )
+            ToolSettingsScreen(
+                viewModel = viewModel,
+                tabbedTools = tabbedTools,
+                onBack = back,
                 onOpenScope = { open(Routes.SCOPE) },
             )
         }

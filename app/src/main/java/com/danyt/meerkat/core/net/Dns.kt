@@ -1,5 +1,6 @@
 package com.danyt.meerkat.core.net
 
+import com.danyt.meerkat.core.text.isHiddenControl
 import java.io.ByteArrayOutputStream
 
 internal const val DNS_TYPE_NS = 2
@@ -61,11 +62,13 @@ internal fun parsePtrAnswer(packet: ByteArray): String? {
 }
 
 /**
- * Cleans a name that came from the network before it is shown: printable characters only, no trailing dot,
+ * Cleans a name that came from the network before it is shown: printable characters only (no direction marks
+ * that could make it read as another name), no trailing dot,
  * limited length. Returns null when nothing usable is left.
  */
 internal fun sanitizeHostname(name: String): String? {
-    val clean = name.filter { it.code in 0x21..0x7E || it.code > 0xA0 }.trimEnd('.').take(MAX_HOSTNAME_LENGTH)
+    val clean = name.filter { (it.code in 0x21..0x7E || it.code > 0xA0) && !it.isHiddenControl() }
+        .trimEnd('.').take(MAX_HOSTNAME_LENGTH)
     return clean.ifEmpty { null }
 }
 

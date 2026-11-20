@@ -1,72 +1,60 @@
 package com.danyt.meerkat.feature.home
 
-import com.danyt.meerkat.core.design.InfoTextWithIcon
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.text.appendInlineContent
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.material3.Text
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import com.danyt.meerkat.core.settings.ThemeMode
-import com.danyt.meerkat.core.help.rememberIntro
-import com.danyt.meerkat.core.help.Intros
-import com.danyt.meerkat.core.help.IntroKeys
-import com.danyt.meerkat.core.help.IntroDialog
-import com.danyt.meerkat.core.design.toHexString
-import com.danyt.meerkat.core.design.SegmentedControl
-import com.danyt.meerkat.core.design.InfoText
-import com.danyt.meerkat.core.design.InfoItem
-import com.danyt.meerkat.core.design.InfoHeading
-import com.danyt.meerkat.core.design.AccentPresets
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.background
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.key
-import androidx.compose.foundation.layout.Column
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.AnimatedVisibility
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.InlineTextContent
+import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.Placeholder
+import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.danyt.meerkat.R
+import com.danyt.meerkat.core.design.AccentPresets
 import com.danyt.meerkat.core.design.AppIcons
 import com.danyt.meerkat.core.design.AppScaffold
 import com.danyt.meerkat.core.design.AppTheme
@@ -75,8 +63,20 @@ import com.danyt.meerkat.core.design.EmptyState
 import com.danyt.meerkat.core.design.GroupedRow
 import com.danyt.meerkat.core.design.GroupedSection
 import com.danyt.meerkat.core.design.IconButton
+import com.danyt.meerkat.core.design.InfoHeading
+import com.danyt.meerkat.core.design.InfoItem
+import com.danyt.meerkat.core.design.InfoText
+import com.danyt.meerkat.core.design.InfoTextWithIcon
 import com.danyt.meerkat.core.design.Note
 import com.danyt.meerkat.core.design.PrimaryButton
+import com.danyt.meerkat.core.design.SegmentedControl
+import com.danyt.meerkat.core.design.animated
+import com.danyt.meerkat.core.design.toHexString
+import com.danyt.meerkat.core.help.IntroDialog
+import com.danyt.meerkat.core.help.IntroKeys
+import com.danyt.meerkat.core.help.Intros
+import com.danyt.meerkat.core.help.rememberIntro
+import com.danyt.meerkat.core.settings.ThemeMode
 
 /** The dashboard: square tiles for the tools the user keeps here, with an edit mode to arrange them. */
 @Composable
@@ -338,10 +338,6 @@ private fun HomeBarButtons(editing: Boolean, actions: HomeActions) {
         }
     }
 }
-
-/** Animates a lazy list item appearing, disappearing, and moving, unless animations are turned off. */
-private fun Modifier.animated(scope: LazyItemScope, enabled: Boolean): Modifier =
-    if (enabled) with(scope) { animateItem() } else this
 
 private val PreviewTiles = listOf(
     HomeItem("lan", R.string.feature_lan_title, R.string.feature_lan_description, AppIcons.Lan, built = true),

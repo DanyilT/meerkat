@@ -125,6 +125,53 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it.remove(Keys.seenIntros) }
     }
 
+    /**
+     * Sets the tab the tool at [route] opens on: a tab key, [AppSettings.LAST_TAB], or null for its first tab.
+     */
+    suspend fun setStartTab(route: String, tab: String?) {
+        dataStore.edit { it[Keys.startTabs] = withEntry(it[Keys.startTabs], route, tab) }
+    }
+
+    /** Remembers [tab] as the one the user looked at last in the tool at [route]. */
+    suspend fun setLastTab(route: String, tab: String) {
+        dataStore.edit { it[Keys.lastTabs] = withEntry(it[Keys.lastTabs], route, tab) }
+    }
+
+    /** Whether the Nearby tool hides Bluetooth devices that announce no name. */
+    suspend fun setHideUnnamedBluetooth(hide: Boolean) {
+        dataStore.edit { it[Keys.hideUnnamedBluetooth] = hide }
+    }
+
+    /** Whether the NFC reader reads and shows a bank card's number and expiry date. */
+    suspend fun setShowCardDetails(show: Boolean) {
+        dataStore.edit { it[Keys.showCardDetails] = show }
+    }
+
+    /** Whether the Nearby tool's Bluetooth filter applies to its distance map too. */
+    suspend fun setBluetoothFilterOnMap(apply: Boolean) {
+        dataStore.edit { it[Keys.bluetoothFilterOnMap] = apply }
+    }
+
+    /** Remembers the Wi-Fi band the user picked on the channel chart. */
+    suspend fun setChannelChartBand(band: String) {
+        dataStore.edit { it[Keys.channelChartBand] = band }
+    }
+
+    /** Saves the Nearby tool's Wi-Fi filter, replacing the one saved before. Keys must not contain "=". */
+    suspend fun setWifiFilter(entries: Map<String, String>) {
+        dataStore.edit { preferences ->
+            preferences[Keys.wifiFilter] = entries.map { (key, value) -> key + ENTRY_SEPARATOR + value }.toSet()
+        }
+    }
+
+    /** Remembers whether the section with [key] is folded away. */
+    suspend fun setSectionFolded(key: String, folded: Boolean) {
+        dataStore.edit {
+            val current = it[Keys.foldedSections].orEmpty()
+            it[Keys.foldedSections] = if (folded) current + key else current - key
+        }
+    }
+
     private fun toSettings(preferences: Preferences): AppSettings {
         val defaults = AppSettings()
         return AppSettings(
@@ -149,7 +196,25 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             introsEnabled = preferences[Keys.introsEnabled] ?: defaults.introsEnabled,
             seenIntros = preferences[Keys.seenIntros] ?: defaults.seenIntros,
             newTools = preferences[Keys.newTools] ?: defaults.newTools,
+            startTabs = toMap(preferences[Keys.startTabs]),
+            lastTabs = toMap(preferences[Keys.lastTabs]),
+            hideUnnamedBluetooth = preferences[Keys.hideUnnamedBluetooth] ?: defaults.hideUnnamedBluetooth,
+            bluetoothFilterOnMap = preferences[Keys.bluetoothFilterOnMap] ?: defaults.bluetoothFilterOnMap,
+            showCardDetails = preferences[Keys.showCardDetails] ?: defaults.showCardDetails,
+            channelChartBand = preferences[Keys.channelChartBand],
+            foldedSections = preferences[Keys.foldedSections] ?: defaults.foldedSections,
+            wifiFilter = toMap(preferences[Keys.wifiFilter]),
         )
+    }
+
+    // Maps from route to tab are stored as a set of "route=tab" entries. Neither part contains "=".
+    private fun toMap(entries: Set<String>?): Map<String, String> = entries.orEmpty()
+        .mapNotNull { entry -> entry.split(ENTRY_SEPARATOR, limit = 2).takeIf { it.size == 2 } }
+        .associate { (key, value) -> key to value }
+
+    private fun withEntry(entries: Set<String>?, key: String, value: String?): Set<String> {
+        val others = entries.orEmpty().filterNot { it.startsWith(key + ENTRY_SEPARATOR) }.toSet()
+        return if (value == null) others else others + (key + ENTRY_SEPARATOR + value)
     }
 
     private object Keys {
@@ -172,11 +237,20 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val seenIntros = stringSetPreferencesKey("seen_intros")
         val knownTools = stringSetPreferencesKey("known_tools")
         val newTools = stringSetPreferencesKey("new_tools")
+        val startTabs = stringSetPreferencesKey("start_tabs")
+        val lastTabs = stringSetPreferencesKey("last_tabs")
+        val hideUnnamedBluetooth = booleanPreferencesKey("hide_unnamed_bluetooth")
+        val bluetoothFilterOnMap = booleanPreferencesKey("bluetooth_filter_on_map")
+        val showCardDetails = booleanPreferencesKey("show_card_details")
+        val channelChartBand = stringPreferencesKey("channel_chart_band")
+        val foldedSections = stringSetPreferencesKey("folded_sections")
+        val wifiFilter = stringSetPreferencesKey("wifi_filter")
     }
 
     private companion object {
         const val OPAQUE_ALPHA = 0xFF000000.toInt()
         const val ROUTE_SEPARATOR = ","
         const val RANGE_SEPARATOR = "\n"
+        const val ENTRY_SEPARATOR = "="
     }
 }

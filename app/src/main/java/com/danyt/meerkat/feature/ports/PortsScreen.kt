@@ -1,15 +1,5 @@
 package com.danyt.meerkat.feature.ports
 
-import com.danyt.meerkat.core.design.InfoTextWithIcon
-import com.danyt.meerkat.core.design.FieldButton
-import com.danyt.meerkat.core.help.rememberIntro
-import com.danyt.meerkat.core.help.PortsHelpDialog
-import com.danyt.meerkat.core.help.Intros
-import com.danyt.meerkat.core.help.IntroKeys
-import com.danyt.meerkat.core.help.IntroDialog
-import com.danyt.meerkat.core.design.InfoText
-import com.danyt.meerkat.core.design.InfoItem
-import com.danyt.meerkat.core.design.InfoHeading
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.danyt.meerkat.R
 import com.danyt.meerkat.core.design.AppIcons
@@ -38,12 +29,22 @@ import com.danyt.meerkat.core.design.AppTheme
 import com.danyt.meerkat.core.design.ConfirmDialog
 import com.danyt.meerkat.core.design.DataColumn
 import com.danyt.meerkat.core.design.DataTable
+import com.danyt.meerkat.core.design.FieldButton
 import com.danyt.meerkat.core.design.IconButton
+import com.danyt.meerkat.core.design.InfoHeading
+import com.danyt.meerkat.core.design.InfoItem
+import com.danyt.meerkat.core.design.InfoText
+import com.danyt.meerkat.core.design.InfoTextWithIcon
 import com.danyt.meerkat.core.design.PrimaryButton
 import com.danyt.meerkat.core.design.ProgressBar
 import com.danyt.meerkat.core.design.SecondaryButton
 import com.danyt.meerkat.core.design.SegmentedControl
 import com.danyt.meerkat.core.design.TextField
+import com.danyt.meerkat.core.help.IntroDialog
+import com.danyt.meerkat.core.help.IntroKeys
+import com.danyt.meerkat.core.help.Intros
+import com.danyt.meerkat.core.help.PortsHelpDialog
+import com.danyt.meerkat.core.help.rememberIntro
 import com.danyt.meerkat.core.net.Ipv4
 import com.danyt.meerkat.core.net.PortResult
 import com.danyt.meerkat.core.net.PortScanState
@@ -67,6 +68,11 @@ fun PortsScreen(
     onOpenReport: (id: String) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // The device may be on another network when the screen comes back, so the fill-in button is checked again.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refreshOwnAddress()
+        onPauseOrDispose {}
+    }
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     var accessDenied by rememberSaveable { mutableStateOf(false) }
@@ -253,7 +259,8 @@ private fun PortsSetup(state: PortsUiState, running: Boolean, actions: PortsActi
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, autoCorrectEnabled = false),
             transformInput = { old, new -> formatAddressInput(old, new, allowRange = false) },
             clearable = true,
-            trailing = if (running) {
+            // Hidden while scanning, and once the field already holds this device's address.
+            trailing = if (running || state.hostIsOwn) {
                 null
             } else {
                 {

@@ -22,7 +22,12 @@ data class HomeItem(
     val icon: ImageVector,
     val built: Boolean,
     val isNew: Boolean = false,
+    val tabs: List<HomeTab> = emptyList(),
 )
+
+/** A tab of a tool, offered by a long press on the tool. [route] opens the tool on that tab. */
+@Immutable
+data class HomeTab(val route: String, @param:StringRes val title: Int, val icon: ImageVector)
 
 /**
  * @property tiles tools on the dashboard, in the user's order.

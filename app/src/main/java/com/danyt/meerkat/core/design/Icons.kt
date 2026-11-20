@@ -37,7 +37,7 @@ object AppIcons {
             ChevronRight, ChevronLeft, ChevronUp, ChevronDown, Check, Close, Search, Clock, Info, Home, Plus,
             Edit, Grid,
             Lan, Ports, Terminal, Traffic, Tools, Reports, Settings, Hotspot, Export, Trash, Wifi, Ethernet,
-            Pin, Help, Shield,
+            Pin, Help, Shield, Nearby, Bluetooth, Cell, Nfc,
         ).map { it.name to it }
     }
 
@@ -111,6 +111,45 @@ object AppIcons {
         icon("Shield") {
             moveTo(12f, 3f); lineTo(19f, 6f); lineTo(19f, 11f); arcTo(9.5f, 9.5f, 0f, false, true, 12f, 21f)
             arcTo(9.5f, 9.5f, 0f, false, true, 5f, 11f); lineTo(5f, 6f); close()
+        }
+    }
+
+    /** Signals spreading out on both sides of a point: things in range. */
+    val Nearby by lazy {
+        icon("Nearby") {
+            circle(12f, 12f, 1.6f)
+            moveTo(8.5f, 8.5f); arcTo(5f, 5f, 0f, false, false, 8.5f, 15.5f)
+            moveTo(15.5f, 8.5f); arcTo(5f, 5f, 0f, false, true, 15.5f, 15.5f)
+            moveTo(5.6f, 5.6f); arcTo(9f, 9f, 0f, false, false, 5.6f, 18.4f)
+            moveTo(18.4f, 5.6f); arcTo(9f, 9f, 0f, false, true, 18.4f, 18.4f)
+        }
+    }
+    val Bluetooth by lazy {
+        icon("Bluetooth") {
+            moveTo(7f, 7.5f); lineTo(16.5f, 16f); lineTo(12f, 20.5f); lineTo(12f, 3.5f); lineTo(16.5f, 8f)
+            lineTo(7f, 16.5f)
+        }
+    }
+
+    /** A mast with signal on both sides, for mobile network cells. */
+    val Cell by lazy {
+        icon("Cell") {
+            circle(12f, 8.5f, 1.4f)
+            moveTo(12f, 10f); lineTo(8f, 21f)
+            moveTo(12f, 10f); lineTo(16f, 21f)
+            moveTo(9.4f, 17f); lineTo(14.6f, 17f)
+            moveTo(8.2f, 5f); arcTo(5f, 5f, 0f, false, false, 8.2f, 12f)
+            moveTo(15.8f, 5f); arcTo(5f, 5f, 0f, false, true, 15.8f, 12f)
+        }
+    }
+
+    /** Four arcs of growing size bulging to the right, like the contactless symbol. */
+    val Nfc by lazy {
+        icon("Nfc") {
+            moveTo(3.7f, 9.5f); arcTo(3.2f, 3.2f, 0f, false, true, 3.7f, 14.5f)
+            moveTo(7.7f, 7f); arcTo(6.5f, 6.5f, 0f, false, true, 7.7f, 17f)
+            moveTo(11.7f, 4.5f); arcTo(9.8f, 9.8f, 0f, false, true, 11.7f, 19.5f)
+            moveTo(15.7f, 2.5f); arcTo(13f, 13f, 0f, false, true, 15.7f, 21.5f)
         }
     }
     val Export by lazy {

@@ -127,4 +127,36 @@ class SettingsRepositoryTest {
             assertEquals(custom, settings.customScan)
         }
     }
+
+    @Test
+    fun `stores start tabs, last tabs, and the Bluetooth filter`() = withStore(newFile()) { store ->
+        val repository = SettingsRepository(store)
+
+        repository.setStartTab("nearby", AppSettings.LAST_TAB)
+        repository.setLastTab("nearby", "cell")
+        repository.setLastTab("nearby", "nfc")
+        repository.setStartTab("other", "b")
+        repository.setHideUnnamedBluetooth(true)
+
+        val settings = repository.settings.first()
+        assertEquals(mapOf("nearby" to AppSettings.LAST_TAB, "other" to "b"), settings.startTabs)
+        assertEquals(mapOf("nearby" to "nfc"), settings.lastTabs)
+        assertEquals(true, settings.hideUnnamedBluetooth)
+
+        repository.setStartTab("nearby", null)
+        assertEquals(mapOf("other" to "b"), repository.settings.first().startTabs)
+    }
+
+    @Test
+    fun `start tab follows the choice`() {
+        val last = AppSettings(
+            startTabs = mapOf("nearby" to AppSettings.LAST_TAB),
+            lastTabs = mapOf("nearby" to "cell"),
+        )
+        assertEquals("cell", last.startTabOf("nearby"))
+        assertEquals("bluetooth", AppSettings(startTabs = mapOf("nearby" to "bluetooth")).startTabOf("nearby"))
+        assertEquals(null, AppSettings().startTabOf("nearby"))
+        // "Last used" with nothing used yet: the first tab.
+        assertEquals(null, AppSettings(startTabs = mapOf("nearby" to AppSettings.LAST_TAB)).startTabOf("nearby"))
+    }
 }

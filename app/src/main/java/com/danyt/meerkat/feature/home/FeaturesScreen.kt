@@ -1,5 +1,11 @@
 package com.danyt.meerkat.feature.home
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
+import com.danyt.meerkat.core.design.HoldMenu
+import com.danyt.meerkat.core.design.HoldMenuOption
+import com.danyt.meerkat.core.design.holdMenuSource
+import com.danyt.meerkat.core.design.rememberHoldMenuState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.res.stringResource
@@ -44,18 +50,29 @@ private fun FeaturesContent(
         item {
             GroupedSection {
                 state.items.forEach { item ->
-                    GroupedRow(
-                        title = stringResource(item.title),
-                        subtitle = stringResource(item.subtitle),
-                        icon = item.icon,
-                        chevron = true,
-                        onClick = { onOpenFeature(item.route) },
-                        trailing = when {
-                            !item.built -> ({ Badge(stringResource(R.string.soon)) })
-                            item.isNew -> ({ Badge(stringResource(R.string.badge_new), emphasized = true) })
-                            else -> null
-                        },
-                    )
+                    // A tool with tabs offers them on a long press: slide to one and lift, or tap it.
+                    val tabs = item.tabs.takeIf { item.built }.orEmpty()
+                    val tabMenu = rememberHoldMenuState()
+                    val openTab = { index: Int -> onOpenFeature(tabs[index].route) }
+                    Box {
+                        GroupedRow(
+                            title = stringResource(item.title),
+                            modifier = if (tabs.isNotEmpty()) Modifier.holdMenuSource(tabMenu, openTab) else Modifier,
+                            subtitle = stringResource(item.subtitle),
+                            icon = item.icon,
+                            chevron = true,
+                            onClick = { onOpenFeature(item.route) },
+                            trailing = when {
+                                !item.built -> ({ Badge(stringResource(R.string.soon)) })
+                                item.isNew -> ({ Badge(stringResource(R.string.badge_new), emphasized = true) })
+                                else -> null
+                            },
+                            onLongClick = if (tabs.isNotEmpty()) tabMenu::open else null,
+                        )
+                        if (tabs.isNotEmpty()) {
+                            HoldMenu(tabMenu, tabs.map { HoldMenuOption(stringResource(it.title), it.icon) }, openTab)
+                        }
+                    }
                 }
             }
         }

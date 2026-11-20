@@ -7,13 +7,22 @@ import com.danyt.meerkat.core.net.Device
 import com.danyt.meerkat.core.net.Ipv4
 import com.danyt.meerkat.core.net.LanScanSession
 import com.danyt.meerkat.core.net.LanScanState
+import com.danyt.meerkat.core.makers.MakerList
+import com.danyt.meerkat.core.makers.MakerLookup
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.stateIn
 
 /** Follows one device from the scan results. [address] is the dotted address the screen was opened for. */
-class DeviceViewModel(session: LanScanSession, localNetwork: LocalNetwork, val address: String) : ViewModel() {
+class DeviceViewModel(
+    session: LanScanSession,
+    localNetwork: LocalNetwork,
+    val address: String,
+    makerList: MakerList? = null,
+) : ViewModel() {
     private val ip = Ipv4.parse(address)
 
     /** True when the device is this phone. There is no SSH server to connect to on the phone itself. */
@@ -28,4 +37,11 @@ class DeviceViewModel(session: LanScanSession, localNetwork: LocalNetwork, val a
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), find(session.state.value))
 
     private fun find(scan: LanScanState): Device? = scan.devices.firstOrNull { it.address == ip }
+
+    /** The downloaded maker list, to name who registered the device's MAC address; null when there is none. */
+    val makers: StateFlow<MakerLookup?> = makerList?.lookup ?: MutableStateFlow(null)
+
+    init {
+        makerList?.let { viewModelScope.launch { it.load() } }
+    }
 }

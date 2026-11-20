@@ -76,6 +76,7 @@ val LocalSheetClose = staticCompositionLocalOf<() -> Unit> { {} }
  *
  * @param onDismiss called when the sheet is dismissed by swipe, back, tapping outside, or [LocalSheetClose].
  * @param title optional centered title at the top of the sheet.
+ * @param titleStart optional small control at the left of the title line, such as a button that resets.
  * @param swipeToDismiss set false when the content handles vertical drags itself, such as a color picker.
  * @param content sheet content, laid out in a column above the navigation bar and keyboard. It scrolls only
  * when it is taller than the available space.
@@ -87,12 +88,13 @@ fun BottomSheet(
     modifier: Modifier = Modifier,
     title: String? = null,
     swipeToDismiss: Boolean = true,
+    titleStart: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // The size of the app's own window, which is also right in split screen and on foldables.
     val window = LocalWindowInfo.current.containerSize
     if (window.width > window.height) {
-        SideSheet(onDismiss, title, content)
+        SideSheet(onDismiss, title, titleStart, content)
         return
     }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -113,14 +115,37 @@ fun BottomSheet(
     ) {
         GlassSurface(Modifier.fillMaxWidth(), shape = SheetShape, hazeState = LocalBackdropHazeState.current) {
             CompositionLocalProvider(LocalSheetClose provides close) {
-                SheetContent(title, swipeToDismiss, content)
+                SheetContent(title, swipeToDismiss, titleStart, content)
             }
         }
     }
 }
 
+/** The sheet's centered title, with an optional control at the left of the same line. */
 @Composable
-private fun SheetContent(title: String?, showGrabber: Boolean, content: @Composable ColumnScope.() -> Unit) {
+private fun SheetTitle(title: String, start: (@Composable () -> Unit)?) {
+    Box(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = title,
+            style = AppTheme.typography.headline,
+            color = AppTheme.colors.label,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.semantics { heading() },
+        )
+        if (start != null) Box(Modifier.align(Alignment.CenterStart)) { start() }
+    }
+}
+
+@Composable
+private fun SheetContent(
+    title: String?,
+    showGrabber: Boolean,
+    titleStart: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val colors = AppTheme.colors
     Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding()) {
         Box(Modifier.fillMaxWidth().padding(top = 6.dp, bottom = 10.dp), contentAlignment = Alignment.Center) {
@@ -128,19 +153,7 @@ private fun SheetContent(title: String?, showGrabber: Boolean, content: @Composa
                 Box(Modifier.size(width = 36.dp, height = 5.dp).background(colors.tertiaryLabel, CircleShape))
             }
         }
-        if (title != null) {
-            Text(
-                text = title,
-                style = AppTheme.typography.headline,
-                color = colors.label,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 16.dp)
-                    .semantics { heading() },
-            )
-        }
+        if (title != null) SheetTitle(title, titleStart)
         // Scrolls only when the content is taller than the space available, for example in landscape, on a small
         // screen, or with the keyboard open. When everything fits there is nothing to scroll.
         Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()), content = content)
@@ -149,7 +162,12 @@ private fun SheetContent(title: String?, showGrabber: Boolean, content: @Composa
 
 /** The landscape form of [BottomSheet]: a full-height panel on the right edge. */
 @Composable
-private fun SideSheet(onDismiss: () -> Unit, title: String?, content: @Composable ColumnScope.() -> Unit) {
+private fun SideSheet(
+    onDismiss: () -> Unit,
+    title: String?,
+    titleStart: (@Composable () -> Unit)?,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val colors = AppTheme.colors
     val animate = AppTheme.animationsEnabled
     val scope = rememberCoroutineScope()
@@ -206,15 +224,7 @@ private fun SideSheet(onDismiss: () -> Unit, title: String?, content: @Composabl
                 hazeState = LocalBackdropHazeState.current,
             ) {
                 Column(Modifier.fillMaxSize().imePadding().padding(top = 18.dp)) {
-                    if (title != null) {
-                        Text(
-                            text = title,
-                            style = AppTheme.typography.headline,
-                            color = colors.label,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp),
-                        )
-                    }
+                    if (title != null) SheetTitle(title, titleStart)
                     CompositionLocalProvider(LocalSheetClose provides { scope.launch { close() } }) {
                         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()), content = content)
                     }

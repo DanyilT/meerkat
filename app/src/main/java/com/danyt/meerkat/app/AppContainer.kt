@@ -6,6 +6,11 @@ import android.os.Process
 import android.os.Build
 import android.app.usage.StorageStatsManager
 import com.danyt.meerkat.core.net.LocalHotspot
+import com.danyt.meerkat.core.makers.MakerList
+import com.danyt.meerkat.core.nearby.BluetoothScanner
+import com.danyt.meerkat.core.nearby.CellReader
+import com.danyt.meerkat.core.nearby.NfcReader
+import com.danyt.meerkat.core.nearby.WifiScanner
 import com.danyt.meerkat.core.help.Intros
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -50,6 +55,15 @@ class AppContainer(context: Context) {
     }
 
     val portScanSession: PortScanSession by lazy { PortScanSession(PortScanner(SocketProber()), appScope) }
+
+    // The Nearby tool's radios. Each reads only while its tab is in front.
+    val wifiScanner: WifiScanner by lazy { WifiScanner(appContext) }
+    val bluetoothScanner: BluetoothScanner by lazy { BluetoothScanner(appContext) }
+    val cellReader: CellReader by lazy { CellReader(appContext) }
+    val nfcReader: NfcReader by lazy { NfcReader(appContext) }
+
+    /** The IEEE's list of who registered each MAC address prefix, when the user downloaded it. */
+    val makerList: MakerList by lazy { MakerList(File(appContext.filesDir, "makers")) }
 
     /** Saved reports, encrypted with a key that never leaves the Android Keystore. */
     val reportStore: ReportStore by lazy {

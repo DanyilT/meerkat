@@ -38,7 +38,9 @@ fun DeviceScreen(
 ) {
     val device by viewModel.device.collectAsStateWithLifecycle()
     val openSsh = onOpenSsh.takeIf { !viewModel.isOwnDevice }
-    DeviceContent(viewModel.address, device, onBack, { onPortScan(viewModel.address) }, openSsh)
+    val makers by viewModel.makers.collectAsStateWithLifecycle()
+    val maker = device?.mac?.let { makers?.of(it) }
+    DeviceContent(viewModel.address, device, onBack, { onPortScan(viewModel.address) }, openSsh, maker)
 }
 
 @Composable
@@ -48,6 +50,7 @@ private fun DeviceContent(
     onBack: () -> Unit,
     onPortScan: () -> Unit,
     onOpenSsh: (() -> Unit)?,
+    maker: String? = null,
 ) {
     val copy = rememberCopyText()
     AppScaffold(
@@ -72,6 +75,7 @@ private fun DeviceContent(
                     device.mac?.let {
                         GroupedRow(stringResource(R.string.device_mac), value = it, onLongClick = { copy(it) })
                     }
+                    maker?.let { GroupedRow(stringResource(R.string.maker_registered_to), subtitle = it) }
                     device.latencyMillis?.let {
                         GroupedRow(stringResource(R.string.device_latency), value = latencyText(it))
                     }

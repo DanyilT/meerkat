@@ -20,8 +20,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -44,6 +49,7 @@ import androidx.compose.ui.window.PopupProperties
 
 private val MenuShape = RoundedCornerShape(18.dp)
 private val MenuGap = 4.dp
+private val MenuMaxHeight = 380.dp
 
 /**
  * A small list of choices that opens next to the element it belongs to. Place it inside the same Box as that
@@ -80,6 +86,9 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
                     .clip(MenuShape)
                     .background(colors.elevated)
                     .border(1.dp, colors.outline, MenuShape)
+                    // A long list scrolls instead of running off the screen.
+                    .heightIn(max = MenuMaxHeight)
+                    .verticalScroll(rememberScrollState())
                     .padding(vertical = 6.dp),
                 content = content,
             )
@@ -87,18 +96,35 @@ fun Menu(expanded: Boolean, onDismiss: () -> Unit, content: @Composable ColumnSc
     }
 }
 
-/** One choice in a [Menu]: a label, and optionally a detail or a mark on the right. */
+/**
+ * One choice in a [Menu]: a label, and optionally an icon on the left and a detail or a mark on the right.
+ *
+ * @param highlighted shows the item as the one under the finger, for menus picked by sliding to an item.
+ */
 @Composable
-fun MenuItem(text: String, onClick: () -> Unit, trailing: (@Composable () -> Unit)? = null) {
+fun MenuItem(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+    highlighted: Boolean = false,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    val colors = AppTheme.colors
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
+            .background(if (highlighted) colors.fill else Color.Transparent)
             .clickable(role = Role.Button, onClick = onClick)
             .heightIn(min = 48.dp)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text, style = AppTheme.typography.body, color = AppTheme.colors.label)
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = colors.accent, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(12.dp))
+        }
+        Text(text, style = AppTheme.typography.body, color = colors.label)
         if (trailing != null) {
             Spacer(Modifier.weight(1f).widthIn(min = 16.dp))
             trailing()

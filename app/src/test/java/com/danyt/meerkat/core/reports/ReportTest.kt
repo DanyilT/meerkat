@@ -66,7 +66,7 @@ class ReportTest {
             "[]",
             """{"format":"other","version":1}""",
             report.toJson().replace("\"version\":1", "\"version\":2"),
-            report.toJson().replace("\"kind\":\"lan\"", "\"kind\":\"wifi\""),
+            report.toJson().replace("\"kind\":\"lan\"", "\"kind\":\"teleport\""),
             report.toJson().replace("\"columns\":[\"Address\",", "\"columns\":["),
             report.toJson().replace("\"title\":\"192.168.1.0/24\"", "\"title\":5"),
         )

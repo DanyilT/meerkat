@@ -7,7 +7,14 @@ import java.util.Locale
 import java.util.TimeZone
 
 /** Which tool a report came from. [code] is the name used in files, so it must never change. */
-enum class ReportKind(val code: String) { Lan("lan"), Ports("ports") }
+enum class ReportKind(val code: String) {
+    Lan("lan"),
+    Ports("ports"),
+    Wifi("wifi"),
+    Bluetooth("bluetooth"),
+    Cell("cell"),
+    Nfc("nfc"),
+}
 
 /**
  * The saved result of one scan, as a table with some facts about it.

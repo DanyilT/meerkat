@@ -20,6 +20,16 @@ enum class ThemeMode { System, Light, Dark }
  * @property introsEnabled whether screens introduce themselves to a new user and show an info button.
  * @property seenIntros keys of the introductions the user has already acknowledged.
  * @property newTools routes of tools that recently became available and show a "New" badge until opened.
+ * @property startTabs for tools with tabs: the tab each opens on, by route, or [LAST_TAB] for the one used last.
+ *   A tool that is not listed opens on its first tab.
+ * @property lastTabs for tools with tabs: the tab the user looked at last, by route.
+ * @property hideUnnamedBluetooth whether the Nearby tool leaves Bluetooth devices without a name out of its list.
+ * @property bluetoothFilterOnMap whether the Bluetooth filter applies to the distance map too.
+ * @property showCardDetails whether the NFC reader reads and shows a bank card's number and expiry date.
+ * @property channelChartBand the Wi-Fi band the user last picked on the channel chart, by name, or null. A band
+ *   the chart falls back to by itself is never stored here.
+ * @property foldedSections keys of the sections the user folded away, such as a tool's chart.
+ * @property wifiFilter the Nearby tool's Wi-Fi filter as named text entries; the tool reads and writes them.
  */
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.System,
@@ -34,8 +44,27 @@ data class AppSettings(
     val introsEnabled: Boolean = true,
     val seenIntros: Set<String> = emptySet(),
     val newTools: Set<String> = emptySet(),
+    val startTabs: Map<String, String> = emptyMap(),
+    val lastTabs: Map<String, String> = emptyMap(),
+    val hideUnnamedBluetooth: Boolean = false,
+    val bluetoothFilterOnMap: Boolean = false,
+    val showCardDetails: Boolean = false,
+    val channelChartBand: String? = null,
+    val foldedSections: Set<String> = emptySet(),
+    val wifiFilter: Map<String, String> = emptyMap(),
 ) {
+    /**
+     * The tab the tool at [route] should open on when no tab was asked for, or null for its first tab.
+     */
+    fun startTabOf(route: String): String? = when (val choice = startTabs[route]) {
+        LAST_TAB -> lastTabs[route]
+        else -> choice
+    }
+
     companion object {
+        /** In [startTabs]: open the tab used last. */
+        const val LAST_TAB = "last"
+
         /** A violet, used until the user picks an accent. */
         const val DEFAULT_ACCENT_COLOR: Int = 0xFF7C5CFC.toInt()
     }

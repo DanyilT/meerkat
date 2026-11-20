@@ -97,4 +97,5 @@ object IntroKeys {
     const val PORTS = "ports"
     const val REPORTS = "reports"
     const val HOTSPOT = "hotspot"
+    const val NEARBY = "nearby"
 }

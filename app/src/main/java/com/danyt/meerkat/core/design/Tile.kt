@@ -3,6 +3,7 @@ package com.danyt.meerkat.core.design
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -27,7 +28,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-private val TileShape = RoundedCornerShape(26.dp)
+/** The shape of a [Tile], shared with things laid over one, such as a covering [HoldMenu]. */
+internal val TileShape = RoundedCornerShape(26.dp)
 private val CompactTileWidth = 160.dp
 
 /**
@@ -39,6 +41,8 @@ private val CompactTileWidth = 160.dp
  * @param badge optional small label in the top right corner, for example "Soon".
  * @param badgeEmphasized fills the badge with the accent color, for something that wants attention, like "New".
  * @param action optional slot in the top right corner, shown instead of [badge], for example a remove button.
+ * @param onLongClick called on a long press, when [onClick] is set too.
+ * @param onLongClickLabel what the long press does, for accessibility services.
  */
 @Composable
 fun Tile(
@@ -50,15 +54,27 @@ fun Tile(
     badge: String? = null,
     badgeEmphasized: Boolean = false,
     action: (@Composable () -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
 ) {
     val colors = AppTheme.colors
+    val click = when {
+        onClick == null -> Modifier
+        onLongClick != null -> Modifier.combinedClickable(
+            role = Role.Button,
+            onLongClickLabel = onLongClickLabel,
+            onLongClick = onLongClick,
+            onClick = onClick,
+        )
+        else -> Modifier.clickable(role = Role.Button, onClick = onClick)
+    }
     BoxWithConstraints(
         modifier = modifier
             .aspectRatio(1f)
             .clip(TileShape)
             .background(colors.card)
             .border(1.dp, colors.outline, TileShape)
-            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
+            .then(click),
     ) {
         // On narrow screens the tile gets small, so its icon and padding shrink and the subtitle keeps one line.
         val compact = maxWidth < CompactTileWidth

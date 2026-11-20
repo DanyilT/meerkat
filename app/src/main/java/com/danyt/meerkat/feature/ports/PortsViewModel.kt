@@ -50,6 +50,7 @@ data class PortsUiState(
     val protocol: Protocol = Protocol.Tcp,
     val reportHashes: ReportHashes = ReportHashes(),
     val scan: PortScanState = PortScanState(),
+    val hostIsOwn: Boolean = false,
 )
 
 /** @param initialHost the address to start with, when the screen was opened from a device. */
@@ -75,7 +76,14 @@ class PortsViewModel(
 
     init {
         viewModelScope.launch { reportStore.load() }
+        refreshOwnAddress()
     }
+
+    /**
+     * Checks again whether the host is this device's address as it is now, for example after returning to the
+     * screen on another network. Call when the screen comes back to the front.
+     */
+    fun refreshOwnAddress() = form.update { it.copy(hostIsOwn = isOwn(it.host)) }
 
     /** The tip is offered once per visit to the screen, until the user says not to show it again. */
     private var macTipClosed = false
@@ -87,7 +95,7 @@ class PortsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), form.value.copy(scan = session.state.value))
 
     /** Fills in this phone's address as it is right now, not as it was when the screen opened. */
-    fun useOwnAddress() = form.update { it.copy(host = ownAddress(), hostError = false) }
+    fun useOwnAddress() = form.update { it.copy(host = ownAddress(), hostError = false, hostIsOwn = true) }
 
     /**
      * True when the MAC address tip should be shown before this scan: the host is on a local network, where
@@ -101,7 +109,7 @@ class PortsViewModel(
         if (forever) viewModelScope.launch { settingsRepository.setMacTipDismissed(true) }
     }
 
-    fun setHost(text: String) = form.update { it.copy(host = text, hostError = false) }
+    fun setHost(text: String) = form.update { it.copy(host = text, hostError = false, hostIsOwn = isOwn(text)) }
 
     fun setPreset(preset: PortPreset) = form.update { it.copy(preset = preset) }
 
@@ -134,6 +142,12 @@ class PortsViewModel(
 
     /** Off Wi-Fi and Ethernet, the phone can still check itself through the loopback address. */
     private fun ownAddress(): String = localNetwork.ownAddresses().firstOrNull()?.toString() ?: LOOPBACK
+
+    /**
+     * Whether [host] already is what the fill-in button would put there, so it has nothing to add. Read fresh
+     * each time: 127.0.0.1 counts only while the device has no other address, and the address can change.
+     */
+    private fun isOwn(host: String): Boolean = host.trim() == ownAddress()
 
     private fun hostRange(): IpRange? = Ipv4.parse(form.value.host.trim())?.let { IpRange(it, it) }
 

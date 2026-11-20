@@ -1,5 +1,13 @@
 package com.danyt.meerkat.core.design
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -58,41 +66,60 @@ private val RowInset = 16.dp
  *
  * @param header optional label above the card, in sentence case.
  * @param footer optional explanatory text below the card.
+ * @param headerAction optional small control at the right end of the header line, such as a [HeaderButton].
+ * @param expanded false folds the card and footer away, leaving the header line, for a section the user can hide.
  */
 @Composable
 fun GroupedSection(
     modifier: Modifier = Modifier,
     header: String? = null,
     footer: String? = null,
+    headerAction: (@Composable () -> Unit)? = null,
+    expanded: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val colors = AppTheme.colors
+    val animate = AppTheme.animationsEnabled
     Column(modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 22.dp)) {
-        if (header != null) {
-            Text(
-                text = header,
-                style = AppTheme.typography.subhead.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.secondaryLabel,
-                modifier = Modifier.padding(start = RowInset, end = RowInset, bottom = 8.dp),
-            )
+        if (header != null || headerAction != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = RowInset, end = RowInset, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = header.orEmpty(),
+                    style = AppTheme.typography.subhead.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.secondaryLabel,
+                    modifier = Modifier.weight(1f),
+                )
+                headerAction?.invoke()
+            }
         }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(SectionShape)
-                .background(colors.card)
-                .border(1.dp, colors.outline, SectionShape)
-                .padding(vertical = 5.dp),
+        AnimatedVisibility(
+            visible = expanded,
+            enter = if (animate) expandVertically(tween(240)) + fadeIn(tween(240)) else EnterTransition.None,
+            exit = if (animate) shrinkVertically(tween(220)) + fadeOut(tween(160)) else ExitTransition.None,
         ) {
-            content()
-        }
-        if (footer != null) {
-            Text(
-                text = footer,
-                style = AppTheme.typography.caption,
-                color = colors.secondaryLabel,
-                modifier = Modifier.padding(start = RowInset, end = RowInset, top = 8.dp),
-            )
+            Column {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(SectionShape)
+                        .background(colors.card)
+                        .border(1.dp, colors.outline, SectionShape)
+                        .padding(vertical = 5.dp),
+                ) {
+                    content()
+                }
+                if (footer != null) {
+                    Text(
+                        text = footer,
+                        style = AppTheme.typography.caption,
+                        color = colors.secondaryLabel,
+                        modifier = Modifier.padding(start = RowInset, end = RowInset, top = 8.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -191,6 +218,42 @@ fun GroupedRow(
                 modifier = Modifier.size(15.dp),
             )
         }
+    }
+}
+
+/**
+ * A small text button for the header line of a [GroupedSection], in the accent color. Its touch area reaches
+ * beyond the text, so it stays easy to hit.
+ */
+@Composable
+fun HeaderButton(text: String, onClick: () -> Unit) {
+    Text(
+        text = text,
+        style = AppTheme.typography.subhead,
+        color = AppTheme.colors.accent,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+    )
+}
+
+/** A small icon button for the header line of a [GroupedSection], such as a chevron that folds the section. */
+@Composable
+fun HeaderIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .clickable(role = Role.Button, onClickLabel = contentDescription, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = AppTheme.colors.accent,
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 

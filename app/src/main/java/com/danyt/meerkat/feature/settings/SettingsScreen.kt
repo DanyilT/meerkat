@@ -33,7 +33,6 @@ import com.danyt.meerkat.core.design.LoadingIndicator
 import com.danyt.meerkat.core.design.SegmentedControl
 import com.danyt.meerkat.core.design.deviceSupportsBlur
 import com.danyt.meerkat.core.design.toHexString
-import com.danyt.meerkat.core.privacy.MacPrivacyDialog
 import com.danyt.meerkat.core.settings.ThemeMode
 import com.danyt.meerkat.core.storage.formatBytes
 
@@ -43,10 +42,9 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onOpenCredits: () -> Unit,
     onOpenLicense: () -> Unit,
-    onOpenScope: () -> Unit,
+    onOpenTools: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showMacTip by rememberSaveable { mutableStateOf(false) }
     var confirmDeleteReports by rememberSaveable { mutableStateOf(false) }
     var showAccentSheet by rememberSaveable { mutableStateOf(false) }
     var confirmClear by rememberSaveable { mutableStateOf(false) }
@@ -67,11 +65,10 @@ fun SettingsScreen(
         onClearCacheClick = { confirmClear = true },
         onOpenCredits = onOpenCredits,
         onOpenLicense = onOpenLicense,
-        onOpenScope = onOpenScope,
-        onMacTipClick = { showMacTip = true },
         onDeleteReportsClick = { confirmDeleteReports = true },
         onIntros = viewModel::setIntrosEnabled,
         onResetIntros = viewModel::resetIntros,
+        onOpenTools = onOpenTools,
     )
 
     if (confirmDeleteReports) {
@@ -89,7 +86,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showMacTip) MacPrivacyDialog(onDismiss = { showMacTip = false })
 
     if (showAccentSheet) {
         AccentColorSheet(
@@ -137,11 +133,10 @@ private fun SettingsContent(
     onClearCacheClick: () -> Unit,
     onOpenCredits: () -> Unit,
     onOpenLicense: () -> Unit,
-    onOpenScope: () -> Unit,
-    onMacTipClick: () -> Unit,
     onDeleteReportsClick: () -> Unit,
     onIntros: (Boolean) -> Unit,
     onResetIntros: () -> Unit,
+    onOpenTools: () -> Unit = {},
 ) {
     val colors = AppTheme.colors
     val settings = state.settings
@@ -195,18 +190,11 @@ private fun SettingsContent(
             }
         }
         item {
-            val ranges = settings.authorizedRanges.size
             GroupedSection(
-                header = stringResource(R.string.settings_scanning),
-                footer = stringResource(R.string.settings_scanning_footer),
+                header = stringResource(R.string.settings_tools),
+                footer = stringResource(R.string.settings_tools_footer),
             ) {
-                GroupedRow(
-                    title = stringResource(R.string.scope_title),
-                    value = if (ranges == 0) stringResource(R.string.scope_none) else ranges.toString(),
-                    chevron = true,
-                    onClick = onOpenScope,
-                )
-                GroupedRow(title = stringResource(R.string.mac_tip_row), chevron = true, onClick = onMacTipClick)
+                GroupedRow(title = stringResource(R.string.settings_tools_row), chevron = true, onClick = onOpenTools)
             }
         }
         item {
@@ -288,8 +276,6 @@ private fun SettingsScreenPreview() {
             onClearCacheClick = {},
             onOpenCredits = {},
             onOpenLicense = {},
-            onOpenScope = {},
-            onMacTipClick = {},
             onDeleteReportsClick = {},
             onIntros = {},
             onResetIntros = {},

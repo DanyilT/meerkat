@@ -1,6 +1,20 @@
 package com.danyt.meerkat.core.design
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.Placeholder
@@ -27,6 +41,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -64,6 +79,8 @@ private val InfoShape = RoundedCornerShape(28.dp)
  *
  * @param onDismiss called when the card is closed.
  * @param containerColor the card's color. Defaults to the theme's raised surface.
+ * @param pinned optional controls under the title that stay in place while [content] scrolls, such as tabs.
+ * @param action an optional button at the right of the title, such as a shortcut to another tool.
  * @param content the explanation, laid out in a column that scrolls when it is taller than the screen.
  */
 @Composable
@@ -71,6 +88,8 @@ fun InfoDialog(
     title: String,
     onDismiss: () -> Unit,
     containerColor: Color = AppTheme.colors.elevated,
+    pinned: (@Composable ColumnScope.() -> Unit)? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -83,7 +102,15 @@ fun InfoDialog(
                 .padding(horizontal = 20.dp, vertical = 28.dp),
             contentAlignment = Alignment.Center,
         ) {
-            InfoCard(title, onDismiss, Modifier.clickable(noRipple, indication = null) {}, containerColor, content)
+            InfoCard(
+                title = title,
+                onClose = onDismiss,
+                modifier = Modifier.clickable(noRipple, indication = null) {},
+                containerColor = containerColor,
+                pinned = pinned,
+                action = action,
+                content = content,
+            )
         }
     }
 }
@@ -94,6 +121,8 @@ private fun InfoCard(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = AppTheme.colors.elevated,
+    pinned: (@Composable ColumnScope.() -> Unit)? = null,
+    action: (@Composable RowScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AppTheme.colors
@@ -125,26 +154,96 @@ private fun InfoCard(
         Box(Modifier.fillMaxWidth().onSizeChanged { titleHeight = it.height }) {
             GlassSurface(Modifier.matchParentSize().graphicsLayer { alpha = covered }, hazeState = hazeState)
             Hairline(Modifier.align(Alignment.BottomCenter).graphicsLayer { alpha = covered })
-            Text(
-                text = title,
-                style = AppTheme.typography.title.copy(fontWeight = FontWeight.SemiBold),
-                color = colors.label,
-                modifier = Modifier
-                    .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 4.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(
-                        role = Role.Button,
-                        onClickLabel = stringResource(R.string.action_close),
-                        onClick = onClose,
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.weight(1f)) { InfoTitle(title, onClose) }
+                    if (action != null) {
+                        Row(
+                            modifier = Modifier.padding(top = 10.dp, end = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            content = action,
+                        )
+                    }
+                }
+                // Controls that stay in place while the text scrolls under them, such as a tab switch.
+                if (pinned != null) {
+                    Column(
+                        modifier = Modifier.padding(start = 22.dp, end = 22.dp, bottom = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        content = pinned,
                     )
-                    .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .semantics { heading() },
-            )
+                }
+            }
         }
     }
 }
 
 private val TitleFadeDistance = 24.dp
+
+/**
+ * The window's title, which closes it when tapped. Like a screen title, holding it a moment shows what a tap
+ * does: here a close mark slides in before the text. A quick tap just closes.
+ */
+@Composable
+private fun InfoTitle(title: String, onClose: () -> Unit) {
+    val colors = AppTheme.colors
+    val animate = AppTheme.animationsEnabled
+    val presses = remember { MutableInteractionSource() }
+    val held by presses.collectIsPressedAsState()
+    var revealed by remember { mutableStateOf(false) }
+    // Shown after a short hold. It stays while a tap closes the window, and folds back if the finger slides away.
+    var closing by remember { mutableStateOf(false) }
+    LaunchedEffect(held) {
+        if (held) {
+            delay(HOLD_REVEAL_MILLIS)
+            revealed = true
+        } else if (!closing) {
+            revealed = false
+        }
+    }
+    Row(
+        modifier = Modifier
+            .padding(start = 14.dp, end = 14.dp, top = 14.dp, bottom = 4.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(
+                interactionSource = presses,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.action_close),
+            ) {
+                closing = true
+                onClose()
+            }
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AnimatedVisibility(
+            visible = animate && revealed,
+            enter = expandHorizontally(tween(BACK_REVEAL_MILLIS), expandFrom = Alignment.Start) +
+                slideInHorizontally(tween(BACK_REVEAL_MILLIS)) { -it } +
+                fadeIn(tween(BACK_REVEAL_MILLIS)),
+            exit = if (closing) {
+                ExitTransition.None
+            } else {
+                shrinkHorizontally(tween(BACK_REVEAL_MILLIS), shrinkTowards = Alignment.Start) +
+                    fadeOut(tween(BACK_REVEAL_MILLIS))
+            },
+        ) {
+            Icon(
+                imageVector = AppIcons.Close,
+                contentDescription = null,
+                tint = colors.accent,
+                modifier = Modifier.padding(end = 12.dp).size(20.dp),
+            )
+        }
+        Text(
+            text = title,
+            style = AppTheme.typography.title.copy(fontWeight = FontWeight.SemiBold),
+            color = colors.label,
+            modifier = Modifier.semantics { heading() },
+        )
+    }
+}
 
 /** A paragraph of body text inside an [InfoDialog]. */
 @Composable

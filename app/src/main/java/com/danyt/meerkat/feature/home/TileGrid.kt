@@ -49,7 +49,12 @@ import androidx.compose.ui.zIndex
 import com.danyt.meerkat.R
 import com.danyt.meerkat.core.design.AppIcons
 import com.danyt.meerkat.core.design.AppTheme
+import com.danyt.meerkat.core.design.HoldMenu
+import com.danyt.meerkat.core.design.HoldMenuOption
 import com.danyt.meerkat.core.design.Tile
+import com.danyt.meerkat.core.design.holdMenuSource
+import com.danyt.meerkat.core.design.rememberHoldMenuState
+import androidx.compose.foundation.layout.fillMaxSize
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -189,11 +194,11 @@ internal fun TileGrid(
                         Modifier
                     }
                     val title = stringResource(item.title)
-                    Tile(
-                        title = title,
-                        icon = item.icon,
-                        onClick = if (editing) null else ({ onOpenFeature(item.route) }),
-                        modifier = Modifier
+                    // A tool with tabs offers them on a long press, outside edit mode.
+                    val tabs = item.tabs.takeIf { !editing && item.built }.orEmpty()
+                    val tabMenu = rememberHoldMenuState()
+                    Box(
+                        Modifier
                             .zIndex(if (focused) 1f else 0f)
                             .offset { if (dragged) target + dragOffset.round() else settled }
                             .size(with(density) { grid.tilePx.toDp() })
@@ -207,15 +212,36 @@ internal fun TileGrid(
                             .then(if (focused) Modifier.background(backing, TileBacking) else Modifier)
                             .then(press)
                             .then(drag),
-                        subtitle = stringResource(item.subtitle),
-                        badge = when {
-                            !item.built -> stringResource(R.string.soon)
-                            item.isNew -> stringResource(R.string.badge_new)
-                            else -> null
-                        },
-                        badgeEmphasized = item.isNew,
-                        action = if (editing) ({ RemoveButton(title) { onRemove(item.route) } }) else null,
-                    )
+                    ) {
+                        val openTab = { index: Int -> onOpenFeature(tabs[index].route) }
+                        Tile(
+                            title = title,
+                            icon = item.icon,
+                            onClick = if (editing) null else ({ onOpenFeature(item.route) }),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .then(if (tabs.isNotEmpty()) Modifier.holdMenuSource(tabMenu, openTab) else Modifier),
+                            subtitle = stringResource(item.subtitle),
+                            badge = when {
+                                !item.built -> stringResource(R.string.soon)
+                                item.isNew -> stringResource(R.string.badge_new)
+                                else -> null
+                            },
+                            badgeEmphasized = item.isNew,
+                            action = if (editing) ({ RemoveButton(title) { onRemove(item.route) } }) else null,
+                            onLongClick = if (tabs.isNotEmpty()) tabMenu::open else null,
+                            onLongClickLabel = stringResource(R.string.tool_tabs_open),
+                        )
+                        if (tabs.isNotEmpty()) {
+                            // The tabs appear on the tile itself, under the finger.
+                            HoldMenu(
+                                state = tabMenu,
+                                options = tabs.map { HoldMenuOption(stringResource(it.title), it.icon) },
+                                onSelect = openTab,
+                                cover = true,
+                            )
+                        }
+                    }
                 }
             }
         }
